@@ -1,6 +1,6 @@
 package com.nextlevelprogrammers.surakshakawach.sync
 
-import Api
+import com.nextlevelprogrammers.surakshakawach.api.Api
 import android.content.Context
 import com.google.firebase.auth.FirebaseAuth
 import com.nextlevelprogrammers.surakshakawach.data.ContactDatabase

@@ -1,6 +1,6 @@
 package com.nextlevelprogrammers.surakshakawach.ui
 
-import Api
+import com.nextlevelprogrammers.surakshakawach.api.Api
 import android.content.Context
 import android.net.ConnectivityManager
 import android.net.NetworkCapabilities

@@ -38,7 +38,7 @@ class VoiceRecognitionService : Service() {
 
     private fun startWakeWordDetection() {
         porcupineManager = PorcupineManager.Builder()
-            .setAccessKey("VyTqW8d9vYCOqdxvNnuH7skFy+b6IBy5NGk2oMWCd48f/KMUCMQmJg==")
+            .setAccessKey("Pi4BPLjLwlkdzArXawqTYlE1+k5pG2paTGPrQH6RVXx4mDyjeIeosw==")
             .setKeywordPath("help_us.ppn")
             .setSensitivity(1f)
             .build(applicationContext, porcupineCallback)
