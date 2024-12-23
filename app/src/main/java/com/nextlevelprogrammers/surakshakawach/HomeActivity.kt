@@ -178,7 +178,7 @@ fun AppNavigation(
             )
         }
         composable("emergency_contacts") {
-            EmergencyContactsScreen()
+            EmergencyContactsScreen(onBackPress = { navController.popBackStack() })
         }
         composable("dashboard") {
             if (firebaseUID != null) {
