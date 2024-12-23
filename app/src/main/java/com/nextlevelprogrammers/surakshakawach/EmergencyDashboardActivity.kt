@@ -1,6 +1,5 @@
 package com.nextlevelprogrammers.surakshakawach
 
-import Api
 import android.os.Bundle
 import android.util.Log
 import androidx.activity.ComponentActivity
@@ -8,32 +7,28 @@ import androidx.activity.compose.setContent
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
-import androidx.compose.ui.Alignment
+import androidx.compose.ui.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Brush
-import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.*
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
-import coil.compose.rememberImagePainter
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.*
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.*
+import coil.compose.rememberAsyncImagePainter
 import coil.transform.CircleCropTransformation
-import com.google.android.gms.maps.model.BitmapDescriptorFactory
-import com.google.android.gms.maps.model.CameraPosition
-import com.google.android.gms.maps.model.LatLng
-import com.google.maps.android.compose.GoogleMap
-import com.google.maps.android.compose.MapProperties
-import com.google.maps.android.compose.MapType
-import com.google.maps.android.compose.MapUiSettings
-import com.google.maps.android.compose.Marker
-import com.google.maps.android.compose.MarkerState
-import com.google.maps.android.compose.rememberCameraPositionState
-import com.nextlevelprogrammers.surakshakawach.api.Coordinates
+import com.google.android.gms.maps.model.*
+import androidx.media3.exoplayer.*
+import androidx.media3.common.MediaItem
+import coil.compose.rememberImagePainter
+import com.google.maps.android.compose.*
+import com.nextlevelprogrammers.surakshakawach.api.*
 import com.nextlevelprogrammers.surakshakawach.ui.theme.SurakshaKawachTheme
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -43,12 +38,11 @@ class EmergencyDashboardActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        // Retrieve the deep link data
+        // Retrieve deep link data
         val data = intent?.data
         val ticketId = data?.getQueryParameter("ticketId")
         val firebaseUID = data?.getQueryParameter("firebaseUID")
 
-        // Log the parameters or handle them as needed
         Log.d("EmergencyDashboard", "Ticket ID: $ticketId")
         Log.d("EmergencyDashboard", "Firebase UID: $firebaseUID")
 
@@ -63,72 +57,101 @@ class EmergencyDashboardActivity : ComponentActivity() {
 }
 
 @Composable
-fun EmergencyDashboardScreen(ticketId: String?, firebaseUID: String?) {
+fun EmergencyDashboardScreen(
+    ticketId: String?,
+    firebaseUID: String?
+) {
+    // States for ticket data
     var ticketStatus by remember { mutableStateOf<String?>(null) }
     var userName by remember { mutableStateOf("Unknown User") }
     var profileImageUrl by remember { mutableStateOf<String?>(null) }
+
+    // Multimedia and location
     var coordinates by remember { mutableStateOf<Coordinates?>(null) }
+    var images by remember { mutableStateOf<List<String>>(emptyList()) }
+    var audios by remember { mutableStateOf<List<String>>(emptyList()) }
+
+    // Navigation state
     var selectedTab by remember { mutableStateOf("Map") }
+
     val coroutineScope = rememberCoroutineScope()
 
-    // Fetch ticket and user data initially
-    LaunchedEffect(ticketId, firebaseUID) {
-        if (ticketId != null && firebaseUID != null) {
-            coroutineScope.launch {
-                val ticketInfo = Api().fetchTicketStatus(firebaseUID, ticketId)
-                ticketStatus = ticketInfo?.status ?: "Unknown"
-                userName = ticketInfo?.userName ?: "Unknown User"
-                coordinates = Api().fetchLatestLocation(firebaseUID, ticketId)
-            }
-        }
-    }
-
-    // Fetch the latest location coordinates every 10 seconds
+    /**
+     * Single LaunchedEffect for syncing all data (status, location, images, audio).
+     */
     LaunchedEffect(ticketId, firebaseUID) {
         if (ticketId != null && firebaseUID != null) {
             while (true) {
                 coroutineScope.launch {
-                    coordinates = Api().fetchLatestLocation(firebaseUID, ticketId)
+                    try {
+                        // 1) Fetch ticket info
+                        val ticketInfo = Api().fetchTicketStatus(firebaseUID, ticketId)
+                        if (ticketInfo == null) {
+                            Log.e("Sync", "fetchTicketStatus returned null for ticket=$ticketId")
+                        } else {
+                            ticketStatus = ticketInfo.status ?: "Unknown"
+                            userName = ticketInfo.userName ?: "Unknown User"
+                            images = ticketInfo.images
+                            audios = ticketInfo.audios
+
+                            Log.d("Sync", "Fetched status=$ticketStatus, userName=$userName")
+                            Log.d("Sync", "Fetched images=${images.size}: $images")
+                            Log.d("Sync", "Fetched audios=${audios.size}: $audios")
+                        }
+
+                        // 2) Fetch location
+                        val latestCoords = Api().fetchLatestLocation(firebaseUID, ticketId)
+                        if (latestCoords == null) {
+                            Log.e("Sync", "No coordinates returned for ticket=$ticketId")
+                        } else {
+                            coordinates = latestCoords
+                            Log.d("Sync", "Fetched coordinates=$latestCoords")
+                        }
+                    } catch (e: Exception) {
+                        Log.e("Sync", "Error in fetch loop: ${e.localizedMessage}", e)
+                    }
                 }
-                delay(10000L) // 10-second delay
+                // Sync every 5 seconds
+                delay(5000L)
             }
         }
     }
 
-    // Determine the color of the border ring based on ticket status
+    // Determine color ring based on ticket status
     val statusColor = when (ticketStatus) {
         "closed" -> Color.Red
         "active" -> Color.Green
         else -> Color.Gray
     }
 
-    // Main layout with full-screen map and overlays
+    // Main layout
     Box(modifier = Modifier.fillMaxSize()) {
-        // Map View or Multimedia View based on the selected tab
-        if (selectedTab == "Map") {
-            coordinates?.let {
-                FullScreenMap(latitude = it.latitude, longitude = it.longitude, userName = userName)
-            } ?: Text(
-                text = "Location data unavailable",
-                style = MaterialTheme.typography.bodyMedium,
-                color = Color.Gray,
-                modifier = Modifier
-                    .align(Alignment.Center)
-                    .padding(horizontal = 16.dp)
-            )
-        } else {
-            // Placeholder for Multimedia content
-            Box(
-                modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.DarkGray),
-                contentAlignment = Alignment.Center
-            ) {
-                Text(text = "Multimedia Content", color = Color.White, fontSize = 20.sp)
+
+        // Conditionally show Map / Images / Audio
+        when (selectedTab) {
+            "Map" -> {
+                coordinates?.let {
+                    FullScreenMap(
+                        latitude = it.latitude,
+                        longitude = it.longitude,
+                        userName = userName
+                    )
+                } ?: Text(
+                    text = "Location data unavailable",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = Color.Gray,
+                    modifier = Modifier.align(Alignment.Center)
+                )
+            }
+            "Images" -> {
+                ImagesSection(ticketStatus = ticketStatus, images = images)
+            }
+            "Audio" -> {
+                AudioSection(ticketStatus = ticketStatus, audios = audios)
             }
         }
 
-        // Top overlay with profile and status
+        // Top overlay with profile + status
         Row(
             verticalAlignment = Alignment.CenterVertically,
             modifier = Modifier
@@ -148,6 +171,7 @@ fun EmergencyDashboardScreen(ticketId: String?, firebaseUID: String?) {
                 modifier = Modifier.size(50.dp),
                 contentAlignment = Alignment.TopEnd
             ) {
+                // Profile (circle)
                 Image(
                     painter = rememberImagePainter(
                         data = profileImageUrl ?: "https://via.placeholder.com/150",
@@ -175,15 +199,25 @@ fun EmergencyDashboardScreen(ticketId: String?, firebaseUID: String?) {
             Spacer(modifier = Modifier.width(16.dp))
 
             // User Name
-            Text(
-                text = userName,
-                style = MaterialTheme.typography.bodyLarge.copy(fontSize = 18.sp),
-                color = Color.Black,
-                modifier = Modifier.padding(start = 8.dp)
-            )
+            Column {
+                Text(
+                    text = userName,
+                    style = MaterialTheme.typography.bodyLarge.copy(fontSize = 18.sp),
+                    color = Color.Black
+                )
+                if (ticketStatus == "closed") {
+                    Text(
+                        text = "Ticket is closed",
+                        style = MaterialTheme.typography.bodySmall.copy(
+                            color = Color.Red,
+                            fontWeight = FontWeight.Bold
+                        )
+                    )
+                }
+            }
         }
 
-        // Bottom Navigation Bar for switching views
+        // Bottom Navigation
         BottomNavBar(
             selectedTab = selectedTab,
             onTabSelected = { selectedTab = it },
@@ -192,23 +226,184 @@ fun EmergencyDashboardScreen(ticketId: String?, firebaseUID: String?) {
     }
 }
 
+/** Displays images with a heading. Shows them even if ticket is "closed". */
+@Composable
+fun ImagesSection(ticketStatus: String?, images: List<String>) {
+    Column(
+        modifier = Modifier
+            .padding(top = 45.dp)
+            .fillMaxSize()
+    ) {
+        Text(
+            text = "Images Gallery",
+            style = MaterialTheme.typography.titleLarge.copy(
+                fontWeight = FontWeight.SemiBold,
+                color = if (ticketStatus == "closed") Color.Gray else Color.Black
+            ),
+            modifier = Modifier.padding(16.dp)
+        )
+
+        if (images.isEmpty()) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "No images yet",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Gray
+                )
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(images.size) { index ->
+                    val imageUrl = images[index]
+                    ElevatedCard(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(200.dp),
+                        shape = RoundedCornerShape(12.dp)
+                    ) {
+                        Image(
+                            painter = rememberAsyncImagePainter(model = imageUrl),
+                            contentDescription = "Multimedia Image",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** Displays audio clips with a heading. Shows them even if ticket is "closed". */
+@Composable
+fun AudioSection(ticketStatus: String?, audios: List<String>) {
+    Column(
+        modifier = Modifier
+            .padding(top = 45.dp)
+            .fillMaxSize()
+    ) {
+        Text(
+            text = "Audio Clips",
+            style = MaterialTheme.typography.titleLarge.copy(
+                fontWeight = FontWeight.SemiBold,
+                color = if (ticketStatus == "closed") Color.Gray else Color.Black
+            ),
+            modifier = Modifier.padding(16.dp)
+        )
+
+        if (audios.isEmpty()) {
+            Box(
+                modifier = Modifier.fillMaxSize(),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = "No audio clips yet",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Gray
+                )
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                items(audios.size) { index ->
+                    val audioUrl = audios[index]
+                    ElevatedCard(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .wrapContentHeight(),
+                        shape = RoundedCornerShape(8.dp)
+                    ) {
+                        AudioPlayer(audioUrl, index + 1)
+                    }
+                }
+            }
+        }
+    }
+}
+
+/** Composable for playing audio from URL using Media3 ExoPlayer. */
+@Composable
+fun AudioPlayer(audioUrl: String, index: Int) {
+    val context = LocalContext.current
+    val exoPlayer = remember {
+        ExoPlayer.Builder(context).build().apply {
+            val mediaItem = MediaItem.fromUri(audioUrl)
+            setMediaItem(mediaItem)
+            prepare()
+        }
+    }
+
+    var isPlaying by remember { mutableStateOf(false) }
+
+    // Keep player in sync with isPlaying
+    LaunchedEffect(isPlaying) {
+        exoPlayer.playWhenReady = isPlaying
+    }
+
+    // Release resources on disposal
+    DisposableEffect(Unit) {
+        onDispose {
+            exoPlayer.release()
+        }
+    }
+
+    // Simple UI row
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        IconButton(onClick = { isPlaying = !isPlaying }) {
+            val iconId = if (isPlaying) R.drawable.pause else R.drawable.play
+            Icon(
+                painter = painterResource(id = iconId),
+                contentDescription = if (isPlaying) "Pause" else "Play"
+            )
+        }
+        Text(
+            text = "Audio $index",
+            modifier = Modifier.padding(start = 8.dp),
+            style = MaterialTheme.typography.bodyLarge.copy(fontWeight = FontWeight.Medium)
+        )
+    }
+}
+
+/** Map composable */
 @Composable
 fun FullScreenMap(latitude: Double, longitude: Double, userName: String) {
     val cameraPositionState = rememberCameraPositionState {
-        position = CameraPosition.fromLatLngZoom(LatLng(latitude, longitude), 17f) // Default zoom level
+        position = CameraPosition.fromLatLngZoom(LatLng(latitude, longitude), 17f)
     }
-
     val markerState = remember { MarkerState(position = LatLng(latitude, longitude)) }
-    var isZoomInitialized by remember { mutableStateOf(false) } // Track if zoom is already set
+    var isZoomInitialized by remember { mutableStateOf(false) }
 
-    // Update marker position if coordinates change, but keep the initial zoom level
+    // Update marker position if coordinates change, but keep the initial zoom
     LaunchedEffect(latitude, longitude) {
         markerState.position = LatLng(latitude, longitude)
-        if (!isZoomInitialized) { // Set zoom level only once
-            cameraPositionState.position = CameraPosition.fromLatLngZoom(markerState.position, 17f)
-            isZoomInitialized = true // Mark zoom as initialized
+        if (!isZoomInitialized) {
+            cameraPositionState.position =
+                CameraPosition.fromLatLngZoom(markerState.position, 17f)
+            isZoomInitialized = true
         } else {
-            cameraPositionState.position = CameraPosition.fromLatLngZoom(markerState.position, cameraPositionState.position.zoom)
+            cameraPositionState.position = CameraPosition.fromLatLngZoom(
+                markerState.position,
+                cameraPositionState.position.zoom
+            )
         }
     }
 
@@ -218,7 +413,6 @@ fun FullScreenMap(latitude: Double, longitude: Double, userName: String) {
         uiSettings = MapUiSettings(zoomControlsEnabled = true),
         properties = MapProperties(mapType = MapType.NORMAL)
     ) {
-        // Add a custom marker at the user's location
         Marker(
             state = markerState,
             icon = BitmapDescriptorFactory.defaultMarker(BitmapDescriptorFactory.HUE_AZURE),
@@ -228,8 +422,13 @@ fun FullScreenMap(latitude: Double, longitude: Double, userName: String) {
     }
 }
 
+/** Bottom navigation: Map, Images, Audio. */
 @Composable
-fun BottomNavBar(selectedTab: String, onTabSelected: (String) -> Unit, modifier: Modifier = Modifier) {
+fun BottomNavBar(
+    selectedTab: String,
+    onTabSelected: (String) -> Unit,
+    modifier: Modifier = Modifier
+) {
     NavigationBar(
         modifier = modifier.fillMaxWidth(),
         tonalElevation = 4.dp,
@@ -239,22 +438,33 @@ fun BottomNavBar(selectedTab: String, onTabSelected: (String) -> Unit, modifier:
             onClick = { onTabSelected("Map") },
             icon = {
                 Icon(
-                    painter = painterResource(id = R.drawable.map_type), // Replace with your actual drawable resource
+                    painter = painterResource(id = R.drawable.map_type),
                     contentDescription = "Map"
                 )
             },
             label = { Text("Map") }
         )
         NavigationBarItem(
-            selected = selectedTab == "Multimedia",
-            onClick = { onTabSelected("Multimedia") },
+            selected = selectedTab == "Images",
+            onClick = { onTabSelected("Images") },
             icon = {
                 Icon(
-                    painter = painterResource(id = R.drawable.media), // Replace with your actual drawable resource
-                    contentDescription = "Multimedia"
+                    painter = painterResource(id = R.drawable.baseline_image),
+                    contentDescription = "Images"
                 )
             },
-            label = { Text("Multimedia") }
+            label = { Text("Images") }
+        )
+        NavigationBarItem(
+            selected = selectedTab == "Audio",
+            onClick = { onTabSelected("Audio") },
+            icon = {
+                Icon(
+                    painter = painterResource(id = R.drawable.baseline_audiotrack),
+                    contentDescription = "Audio"
+                )
+            },
+            label = { Text("Audio") }
         )
     }
 }

@@ -7,7 +7,9 @@ data class TicketDetailsResponse(
     val ticketId: String,
     val firebaseUID: String,
     val locationInfo: List<LocationInfo>,
-    val status: String
+    val status: String,
+    val images: List<ImageItem>? = null,
+    val audioClips: List<AudioItem>? = null
 )
 
 @Serializable
@@ -20,6 +22,20 @@ data class LocationInfo(
 data class Coordinates(
     val latitude: Double,
     val longitude: Double
+)
+
+@Serializable
+data class ImageItem(
+    val url: String,
+    val timestamp: Long? = null,
+    val description: String? = null
+)
+
+@Serializable
+data class AudioItem(
+    val url: String,
+    val timestamp: Long? = null,
+    val description: String? = null
 )
 
 @Serializable
@@ -47,5 +63,7 @@ data class UserInfo(
 
 data class TicketInfo(
     val status: String?,
-    val userName: String?
+    val userName: String?,
+    val images: List<String> = emptyList(),
+    val audios: List<String> = emptyList()
 )

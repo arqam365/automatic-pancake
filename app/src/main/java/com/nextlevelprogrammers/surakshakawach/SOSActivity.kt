@@ -1,6 +1,5 @@
 package com.nextlevelprogrammers.surakshakawach
 
-import Api
 import android.Manifest
 import android.app.Activity
 import android.content.Context
@@ -51,6 +50,7 @@ import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.storage.FirebaseStorage
+import com.nextlevelprogrammers.surakshakawach.api.Api
 import com.nextlevelprogrammers.surakshakawach.api.ClipData
 import com.nextlevelprogrammers.surakshakawach.api.ImageData
 import com.nextlevelprogrammers.surakshakawach.ui.getCurrentTimestamp
@@ -321,17 +321,17 @@ class SOSActivity : ComponentActivity() {
     }
 
     private fun uploadImageToFirebase(file: File, firebaseUID: String, captureTimestamp: Long) {
-        val firebaseUID = getFirebaseUIDOrFallback() ?: return
         val fileUri: Uri = Uri.fromFile(file)
+        val fileName = file.name
         val storageReference = FirebaseStorage.getInstance()
-            .getReference("emergency-images/${file.name}")
+            .getReference("emergency-images/$fileName")
 
         storageReference.putFile(fileUri)
             .addOnSuccessListener {
                 storageReference.downloadUrl.addOnSuccessListener { uri ->
                     Log.d("SOS_TICKET", "Image uploaded successfully: $uri")
 
-                    val gsBucketUrl = "gs://suraksha-kawach-24ff7.appspot.com/emergency-images/${file.name}"
+                    val gsBucketUrl = generateGsBucketImagesUrl(fileName)
 
                     val imageData = ImageData(
                         url = uri.toString(),
@@ -349,20 +349,21 @@ class SOSActivity : ComponentActivity() {
                 Log.e("SOS_TICKET", "Failed to upload image: ${it.message}")
             }
     }
-
     private fun sendImageDataToBackend(firebaseUID: String, imagesData: List<ImageData>) {
         if (sosTicketId != null) {
             Log.d("SOS_TICKET", "Preparing to send image data to backend. SOS Ticket ID: $sosTicketId")
 
             lifecycleScope.launch {
                 try {
-                    val imagesData = imagesData.map { imageData ->
+                    val modifiedImagesData = imagesData.map { imageData ->
                         imageData.copy(
-                            gsBucketUrl = generateGsBucketUrl(imageData.url)
+                            gsBucketUrl = generateGsBucketImagesUrl(imageData.url)
                         )
                     }
 
-                    val success = Api().sendImages(sosTicketId!!, firebaseUID, imagesData)
+                    Log.d("SOS_TICKET", "Modified Images Data: $modifiedImagesData")
+
+                    val success = Api().sendImages(sosTicketId!!, firebaseUID, modifiedImagesData)
                     if (success) {
                         Log.d("SOS_TICKET", "Image data sent successfully to the server")
                     } else {
@@ -377,10 +378,23 @@ class SOSActivity : ComponentActivity() {
         }
     }
 
-    private fun generateGsBucketUrl(url: String): String {
+    private fun generateGsBucketImagesUrl(url: String): String {
         val bucketName = "suraksha-kawach-24ff7.appspot.com"
         val folderName = "emergency-images"
-        val fileName = url.substringAfterLast("/")
+        // Extract the file name without the redundant folder prefix
+        val fileName = url.substringAfterLast("/") // Extract file name
+            .substringBefore("?") // Remove query parameters
+            .replace("emergency-images%2F", "") // Remove "emergency-images%2F" if present
+        return "gs://$bucketName/$folderName/$fileName"
+    }
+
+    private fun generateGsBucketAudioUrl(url: String): String {
+        val bucketName = "suraksha-kawach-24ff7.appspot.com"
+        val folderName = "emergency-audio"
+        // Extract the file name without the redundant folder prefix
+        val fileName = url.substringAfterLast("/") // Extract file name
+            .substringBefore("?") // Remove query parameters
+            .replace("emergency-audio%2F", "") // Remove "emergency-audio%2F" if present
         return "gs://$bucketName/$folderName/$fileName"
     }
 
@@ -427,6 +441,7 @@ class SOSActivity : ComponentActivity() {
     private fun uploadAudioToFirebase(audioFile: File, firebaseUID: String, captureTimestamp: Long) {
         val firebaseUID = getFirebaseUIDOrFallback() ?: return
         val fileUri: Uri = Uri.fromFile(audioFile)
+        val fileName = audioFile.name
         val storageReference = FirebaseStorage.getInstance()
             .getReference("emergency-audio/${audioFile.name}")
 
@@ -439,8 +454,10 @@ class SOSActivity : ComponentActivity() {
                     val audioUrl = uri.toString()
                     Log.d("SOS_TICKET", "Audio URL retrieved: $audioUrl")
 
+                    val gsBucketUrl = generateGsBucketAudioUrl(fileName)
+
                     // Create a ClipData object with URL and timestamp
-                    val clipData = ClipData(url = audioUrl, timestamp = captureTimestamp)
+                    val clipData = ClipData(url = audioUrl, timestamp = captureTimestamp, gsBucketUrl = gsBucketUrl)
                     sendClipsDataToBackend(firebaseUID, listOf(clipData))
 
                     audioFile.delete()
@@ -459,7 +476,16 @@ class SOSActivity : ComponentActivity() {
 
             lifecycleScope.launch {
                 try {
-                    val success = Api().sendAudioClips(sosTicketId!!, firebaseUID, clipsData)
+                    val modifiedClipsData = clipsData.map { clipData ->
+                        clipData.copy(
+                            gsBucketUrl = generateGsBucketAudioUrl(clipData.url)
+                        )
+                    }
+
+                    Log.d("SOS_TICKET", "Modified Clips Data: $modifiedClipsData")
+
+
+                    val success = Api().sendAudioClips(sosTicketId!!, firebaseUID, modifiedClipsData)
                     if (success) {
                         Log.d("SOS_TICKET", "Audio clip data sent successfully to the server")
                     } else {

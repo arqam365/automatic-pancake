@@ -1,6 +1,6 @@
 package com.nextlevelprogrammers.surakshakawach.ui
 
-import Api
+import com.nextlevelprogrammers.surakshakawach.api.Api
 import android.content.Intent
 import androidx.compose.animation.*
 import androidx.compose.foundation.Image

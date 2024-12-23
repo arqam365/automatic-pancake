@@ -3,7 +3,7 @@ package com.nextlevelprogrammers.surakshakawach.sync
 import android.content.Context
 import androidx.work.Worker
 import androidx.work.WorkerParameters
-import Api
+import com.nextlevelprogrammers.surakshakawach.api.Api
 import com.google.firebase.auth.FirebaseAuth
 import com.nextlevelprogrammers.surakshakawach.data.ContactDatabase
 import com.nextlevelprogrammers.surakshakawach.data.EmergencyContactEntity
