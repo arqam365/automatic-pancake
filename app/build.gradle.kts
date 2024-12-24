@@ -16,8 +16,8 @@ android {
         applicationId = "com.nextlevelprogrammers.surakshakawach"
         minSdk = 27
         targetSdk = 35
-        versionCode = 15
-        versionName = "1.4.3.6"
+        versionCode = 17
+        versionName = "1.4.4.6"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
         vectorDrawables {
@@ -118,4 +118,6 @@ dependencies {
     implementation ("androidx.work:work-runtime-ktx:2.10.0")
     implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
     implementation ("androidx.media3:media3-exoplayer:1.5.1")
-    implementation ("androidx.media3:media3-ui:1.5.1")}
+    implementation ("androidx.media3:media3-ui:1.5.1")
+    implementation("com.google.accompanist:accompanist-swiperefresh:0.27.0")
+}
