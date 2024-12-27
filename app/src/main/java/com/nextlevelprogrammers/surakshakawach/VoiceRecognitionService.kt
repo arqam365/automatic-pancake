@@ -3,18 +3,13 @@ package com.nextlevelprogrammers.surakshakawach
 import ai.picovoice.porcupine.PorcupineManager
 import ai.picovoice.porcupine.PorcupineManagerCallback
 import android.Manifest
-import android.app.Notification
-import android.app.NotificationChannel
-import android.app.NotificationManager
 import android.app.PendingIntent
 import android.app.Service
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.media.AudioRecord
 import android.os.Build
 import android.os.IBinder
 import android.util.Log
-import androidx.core.app.NotificationCompat
 import androidx.core.content.ContextCompat
 
 class VoiceRecognitionService : Service() {
@@ -38,7 +33,7 @@ class VoiceRecognitionService : Service() {
 
     private fun startWakeWordDetection() {
         porcupineManager = PorcupineManager.Builder()
-            .setAccessKey("Pi4BPLjLwlkdzArXawqTYlE1+k5pG2paTGPrQH6RVXx4mDyjeIeosw==")
+            .setAccessKey("1CuGdHjaAKIPCBLY2fI7CmRTUfwuVzWml+OEENBn9S+Hjq4Ct/rtwQ==")
             .setKeywordPath("help_us.ppn")
             .setSensitivity(1f)
             .build(applicationContext, porcupineCallback)
