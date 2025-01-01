@@ -72,9 +72,9 @@ class SOSActivity : ComponentActivity() {
     private var imageCapture: ImageCapture? = null
     private val handler = Handler(Looper.getMainLooper())
     private var sosTicketId: String? = null
-    private val captureInterval: Long = 60000 // Capture every 60 seconds
+    private var dynamicInterval: Long = 15000 // Capture every 10 seconds
     private var isRecordingAudio = false
-    private val audioRecordingInterval: Long = 60000 // 60 seconds interval
+    private val audioRecordingInterval: Long = 50000 // 40 seconds interval
     private val audioRecordingDuration: Long = 15000 // 15 seconds duration
     private lateinit var fusedLocationClient: FusedLocationProviderClient
     private var isCapturingImages = false
@@ -250,27 +250,38 @@ class SOSActivity : ComponentActivity() {
         val imageCaptureRunnable = object : Runnable {
             override fun run() {
                 if (isCapturingImages) {
-                    captureImage()
-                    handler.postDelayed(this, captureInterval)
+                    val startTime = System.currentTimeMillis()
+
+                    captureImage {
+                        val endTime = System.currentTimeMillis()
+                        val processingTime = endTime - startTime
+
+                        // Set next interval based on processing time with a buffer
+                        dynamicInterval = processingTime + 10000 // Add 10 seconds buffer
+                        Log.d("CameraX", "Dynamic interval adjusted to: $dynamicInterval ms")
+
+                        // Schedule the next capture
+                        handler.postDelayed(this, dynamicInterval)
+                    }
                 }
             }
         }
         handler.post(imageCaptureRunnable)
     }
 
-    private fun captureImage() {
+    private fun captureImage(onComplete: () -> Unit) {
         val currentTimestamp = System.currentTimeMillis()
 
         // Check if the interval has passed since the last capture
-        if (currentTimestamp - lastCaptureTimestamp < captureInterval) {
+        if (currentTimestamp - lastCaptureTimestamp < dynamicInterval) {
             Log.d("CameraX", "Skipping capture to respect interval")
+            onComplete()
             return
         }
 
-        // Update the last capture timestamp
         lastCaptureTimestamp = currentTimestamp
 
-        val imageCapture = imageCapture ?: return
+        val imageCapture = imageCapture ?: return onComplete()
         val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
         val photoFile = File(externalMediaDirs.first(), "IMG_$timestamp.jpg")
         val firebaseUID = getFirebaseUIDOrFallback() ?: ""
@@ -284,13 +295,13 @@ class SOSActivity : ComponentActivity() {
                 override fun onImageSaved(output: ImageCapture.OutputFileResults) {
                     Log.d("CameraX", "Photo captured: ${photoFile.absolutePath}")
                     val compressedFile = compressImage(photoFile)
-
-                    // Pass the 'firebaseUID' along with the compressed file and capture timestamp
                     uploadImageToFirebase(compressedFile, firebaseUID, currentTimestamp)
+                    onComplete() // Notify completion
                 }
 
                 override fun onError(exception: ImageCaptureException) {
                     Log.e("CameraX", "Photo capture failed: ${exception.message}", exception)
+                    onComplete() // Notify completion
                 }
             }
         )

@@ -111,8 +111,8 @@ fun EmergencyDashboardScreen(
                         Log.e("Sync", "Error in fetch loop: ${e.localizedMessage}", e)
                     }
                 }
-                // Sync every 5 seconds
-                delay(5000L)
+                // Sync every 50 Milliseconds
+                delay(500L)
             }
         }
     }
