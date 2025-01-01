@@ -27,37 +27,50 @@ class VoiceRecognitionService : Service() {
             stopSelf()
             return START_NOT_STICKY
         }
-        startWakeWordDetection()
+        try {
+            startWakeWordDetection()
+        } catch (e: Exception) {
+            Log.e("VoiceRecognitionService", "Error starting wake word detection: ${e.message}", e)
+            stopSelf() // Stop the service to prevent unexpected behavior
+        }
         return START_STICKY
     }
 
     private fun startWakeWordDetection() {
-        porcupineManager = PorcupineManager.Builder()
-            .setAccessKey("1CuGdHjaAKIPCBLY2fI7CmRTUfwuVzWml+OEENBn9S+Hjq4Ct/rtwQ==")
-            .setKeywordPath("help_us.ppn")
-            .setSensitivity(1f)
-            .build(applicationContext, porcupineCallback)
-        porcupineManager?.start()
+        try {
+            porcupineManager = PorcupineManager.Builder()
+                .setAccessKey("Pi4BPLjLwlkdzArXawqTYlE1+k5pG2paTGPrQH6RVXx4mDyjeIeosw==")
+                .setKeywordPath("help_us.ppn")
+                .setSensitivity(1f)
+                .build(applicationContext, porcupineCallback)
+            porcupineManager?.start()
+            isListening = true
+        } catch (e: Exception) {
+            Log.e("VoiceRecognitionService", "Failed to initialize PorcupineManager: ${e.message}", e)
+            porcupineManager = null
+        }
     }
 
-
-
     private fun sendWakeWordDetectedBroadcast() {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            // Use the broadcast method
-            sendBroadcast(Intent("com.nextlevelprogrammers.surakshakawach.WAKE_WORD_DETECTED"))
-        } else {
-            // Use the PendingIntent method
-            val intent = Intent(this, HomeActivity::class.java).apply {
-                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                // Use the broadcast method
+                sendBroadcast(Intent("com.nextlevelprogrammers.surakshakawach.WAKE_WORD_DETECTED"))
+            } else {
+                // Use the PendingIntent method
+                val intent = Intent(this, HomeActivity::class.java).apply {
+                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                }
+                val pendingIntent = PendingIntent.getActivity(
+                    this,
+                    0,
+                    intent,
+                    PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+                )
+                pendingIntent.send()
             }
-            val pendingIntent = PendingIntent.getActivity(
-                this,
-                0,
-                intent,
-                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-            )
-            pendingIntent.send()
+        } catch (e: Exception) {
+            Log.e("VoiceRecognitionService", "Error sending wake word detected broadcast: ${e.message}", e)
         }
     }
 
@@ -66,12 +79,14 @@ class VoiceRecognitionService : Service() {
     }
 
     override fun onDestroy() {
-        Log.d("VoiceRecognitionService", "onDestroy: Stopping PorcupineManager and releasing AudioRecord.")
-        porcupineManager?.stop()
-        porcupineManager?.delete()
+        Log.d("VoiceRecognitionService", "onDestroy: Stopping PorcupineManager and releasing resources.")
+        try {
+            porcupineManager?.stop()
+            porcupineManager?.delete()
+        } catch (e: Exception) {
+            Log.e("VoiceRecognitionService", "Error stopping or deleting PorcupineManager: ${e.message}", e)
+        }
         isListening = false
-        Log.d("VoiceRecognitionService", "onDestroy: PorcupineManager stopped, AudioRecord released.")
-
         super.onDestroy()
     }
 

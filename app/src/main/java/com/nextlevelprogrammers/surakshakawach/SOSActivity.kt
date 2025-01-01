@@ -72,7 +72,7 @@ class SOSActivity : ComponentActivity() {
     private var imageCapture: ImageCapture? = null
     private val handler = Handler(Looper.getMainLooper())
     private var sosTicketId: String? = null
-    private var dynamicInterval: Long = 10000 // Capture every 10 seconds
+    private var dynamicInterval: Long = 15000 // Capture every 10 seconds
     private var isRecordingAudio = false
     private val audioRecordingInterval: Long = 50000 // 40 seconds interval
     private val audioRecordingDuration: Long = 15000 // 15 seconds duration
@@ -257,7 +257,7 @@ class SOSActivity : ComponentActivity() {
                         val processingTime = endTime - startTime
 
                         // Set next interval based on processing time with a buffer
-                        dynamicInterval = processingTime + 2000 // Add 2 seconds buffer
+                        dynamicInterval = processingTime + 10000 // Add 10 seconds buffer
                         Log.d("CameraX", "Dynamic interval adjusted to: $dynamicInterval ms")
 
                         // Schedule the next capture
