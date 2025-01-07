@@ -58,7 +58,6 @@ import com.google.maps.android.compose.rememberCameraPositionState
 import com.nextlevelprogrammers.surakshakawach.R
 import com.nextlevelprogrammers.surakshakawach.SOSActivity
 import com.nextlevelprogrammers.surakshakawach.VoiceRecognitionService
-import com.nextlevelprogrammers.surakshakawach.WatchActivity
 import com.nextlevelprogrammers.surakshakawach.data.ContactDatabase
 import com.nextlevelprogrammers.surakshakawach.utils.NetworkMonitor
 import com.nextlevelprogrammers.surakshakawach.utils.UserSessionManager
@@ -849,17 +848,6 @@ fun BottomNavBar(navController: NavHostController) {
                     contentDescription = "Start Voice Recognition"
                 )
             }
-        )
-        NavigationBarItem(
-            selected = false,
-            onClick = {
-                val intent = Intent(context, WatchActivity::class.java)
-                context.startActivity(intent)
-            },
-            icon = { Icon(
-                painter = painterResource(id = R.drawable.watch),
-                contentDescription = "Home"
-            ) }
         )
         NavigationBarItem(
             selected = false,
