@@ -3,6 +3,7 @@ package com.nextlevelprogrammers.surakshakawach.ui
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
@@ -15,6 +16,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.google.accompanist.swiperefresh.SwipeRefresh
+import com.google.accompanist.swiperefresh.rememberSwipeRefreshState
 import kotlinx.coroutines.launch
 import com.nextlevelprogrammers.surakshakawach.api.Api
 import androidx.compose.ui.draw.clip
@@ -26,36 +29,51 @@ fun DashboardScreen(firebaseUID: String) {
     var userProfile by remember { mutableStateOf<UserData?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var errorMessage by remember { mutableStateOf<String?>(null) }
+    var isRefreshing by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
+    val swipeRefreshState = rememberSwipeRefreshState(isRefreshing)
 
-    // Fetch user data
-    LaunchedEffect(Unit) {
+    // Function to fetch user data
+    val onRefresh: () -> Unit = {
+        isRefreshing = true
         coroutineScope.launch {
             try {
                 val api = Api()
                 val response = api.getUserProfile(firebaseUID)
                 if (response != null) {
                     userProfile = response.data
+                    errorMessage = null
                 } else {
                     errorMessage = "Failed to load user data"
                 }
             } catch (e: Exception) {
                 errorMessage = "Error: ${e.localizedMessage}"
             } finally {
+                isRefreshing = false
                 isLoading = false
             }
         }
     }
 
-    Box(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(Color(0xFFF2F2F7)) // Light background color
+    // Initial Data Fetch
+    LaunchedEffect(Unit) {
+        onRefresh()
+    }
+
+    SwipeRefresh(
+        state = swipeRefreshState ,
+        onRefresh = { onRefresh() }
     ) {
-        when {
-            isLoading -> LoadingIndicator()
-            errorMessage != null -> ErrorMessage(message = errorMessage!!)
-            userProfile != null -> DashboardContent(userProfile!!)
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color(0xFFF2F2F7)) // Light background color
+        ) {
+            when {
+                isLoading -> LoadingIndicator()
+                errorMessage != null -> ErrorMessage(message = errorMessage!!)
+                userProfile != null -> DashboardContent(userProfile!!)
+            }
         }
     }
 }
@@ -86,39 +104,41 @@ fun ErrorMessage(message: String) {
 
 @Composable
 fun DashboardContent(user: UserData) {
-    Column(
+    LazyColumn(
         modifier = Modifier
             .fillMaxSize()
             .padding(horizontal = 16.dp, vertical = 32.dp),
         verticalArrangement = Arrangement.Top,
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
-        // Header
-        Text(
-            text = "Welcome, ${user.displayName}",
-            fontSize = 28.sp,
-            fontWeight = FontWeight.Bold,
-            color = Color(0xFF3A7CA5)
-        )
+        item {
+            // Header
+            Text(
+                text = "Welcome, ${user.displayName}",
+                fontSize = 28.sp,
+                fontWeight = FontWeight.Bold,
+                color = Color(0xFF3A7CA5)
+            )
 
-        Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-        // Profile Info Card
-        ProfileCard(user)
+            // Profile Info Card
+            ProfileCard(user)
 
-        Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
-        // Action Buttons
-        ActionButton(
-            label = "Edit Profile",
-            backgroundColor = Color(0xFF3A7CA5),
-            onClick = { /* Implement edit action */ }
-        )
-        ActionButton(
-            label = "Settings",
-            backgroundColor = Color(0xFF5DB075),
-            onClick = { /* Implement settings action */ }
-        )
+            // Action Buttons
+            ActionButton(
+                label = "Edit Profile",
+                backgroundColor = Color(0xFF3A7CA5),
+                onClick = { /* Implement edit action */ }
+            )
+            ActionButton(
+                label = "Settings",
+                backgroundColor = Color(0xFF5DB075),
+                onClick = { /* Implement settings action */ }
+            )
+        }
     }
 }
 
