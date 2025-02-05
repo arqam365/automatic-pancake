@@ -5,7 +5,8 @@ plugins {
     id("com.google.firebase.crashlytics")
     id("com.google.firebase.firebase-perf")
     id("org.jetbrains.kotlin.plugin.serialization") version "2.0.20"
-    id ("kotlin-kapt")
+    id ("com.google.devtools.ksp") version "2.1.10-1.0.29"
+    alias(libs.plugins.kotlin.compose)
 }
 
 android {
@@ -113,11 +114,11 @@ dependencies {
     implementation ("ai.picovoice:porcupine-android:3.0.1")
     implementation ("ai.picovoice:rhino-android:3.0.1")
     implementation ("androidx.room:room-runtime:2.6.1")
-    kapt ("androidx.room:room-compiler:2.6.1")
+    ksp ("androidx.room:room-compiler:2.6.1")
     implementation ("androidx.room:room-ktx:2.6.1")
     implementation ("androidx.work:work-runtime-ktx:2.10.0")
-    implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.9.0")
+    implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.1")
     implementation ("androidx.media3:media3-exoplayer:1.5.1")
     implementation ("androidx.media3:media3-ui:1.5.1")
-    implementation("com.google.accompanist:accompanist-swiperefresh:0.27.0")
+    implementation("com.google.accompanist:accompanist-swiperefresh:0.36.0")
 }
