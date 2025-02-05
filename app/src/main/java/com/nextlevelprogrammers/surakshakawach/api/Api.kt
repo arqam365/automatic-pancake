@@ -37,7 +37,7 @@
             gender: String
         ): Boolean {
             val response: HttpResponse = client.submitForm(
-                url = "https://surakshakawach-mobilebackend-192854867616.asia-south2.run.app/api/v1/user",
+                url = "https://suraksha-kawach-backend-809410945582.us-central1.run.app/api/v1/user",
                 formParameters = Parameters.build {
                     append("firebaseUID", firebaseUID)
                     append("name", name)
@@ -50,7 +50,7 @@
         }
 
         suspend fun checkIfUserExists(firebaseUID: String): Boolean {
-            val response: HttpResponse = client.get("https://surakshakawach-mobilebackend-192854867616.asia-south2.run.app/api/v1/user") {
+            val response: HttpResponse = client.get("https://suraksha-kawach-backend-809410945582.us-central1.run.app/api/v1/user") {
                 url {
                     parameters.append("firebaseUID", firebaseUID)
                 }
@@ -69,7 +69,7 @@
 
         // Function to get user profile data from the server using GET request
         suspend fun getUserProfile(firebaseUID: String): UserProfileResponse? {
-            val response: HttpResponse = client.get("https://surakshakawach-mobilebackend-192854867616.asia-south2.run.app/api/v1/user") {
+            val response: HttpResponse = client.get("https://suraksha-kawach-backend-809410945582.us-central1.run.app/api/v1/user") {
                 url {
                     parameters.append("firebaseUID", firebaseUID)
                 }
@@ -91,7 +91,7 @@
             mobile: String
         ): Boolean {
             val response: HttpResponse = client.submitForm(
-                url = "https://surakshakawach-mobilebackend-192854867616.asia-south2.run.app/api/v1/user/create/emergency-contact",
+                url = "https://suraksha-kawach-backend-809410945582.us-central1.run.app/api/v1/user/create/emergency-contact",
                 formParameters = Parameters.build {
                     append("firebaseUID", firebaseUID)
                     append("name", name)
@@ -105,7 +105,7 @@
 
     //    // Function to get emergency contacts
     //    suspend fun getEmergencyContacts(firebaseUID: String): List<ApiContact>? {
-    //        val response: List<ApiContact> = client.get("https://surakshakawach-mobilebackend-192854867616.asia-south2.run.app/api/v1/user/emergency-contacts") {
+    //        val response: List<ApiContact> = client.get("https://suraksha-kawach-backend-809410945582.us-central1.run.app/api/v1/user/emergency-contacts") {
     //            parameter("firebaseUID", firebaseUID)
     //        }
     //        return response
@@ -119,7 +119,7 @@
             timestamp: String
         ): String? {
             try {
-                val url = "https://surakshakawach-mobilebackend-192854867616.asia-south2.run.app/api/v1/ticket/create"
+                val url = "https://suraksha-kawach-backend-809410945582.us-central1.run.app/api/v1/ticket/create"
                 Log.d("SOS_TICKET", "Sending SOS ticket to URL: $url with parameters: firebaseUID=$firebaseUID, latitude=$latitude, longitude=$longitude, timestamp=$timestamp")
 
                 val response: HttpResponse = client.submitForm(
@@ -177,7 +177,7 @@
             timestamp: String
         ): TicketDetailsResponse? {
             try {
-                val url = "https://surakshakawach-mobilebackend-192854867616.asia-south2.run.app/api/v1/ticket"
+                val url = "https://suraksha-kawach-backend-809410945582.us-central1.run.app/api/v1/ticket"
                 val response: HttpResponse = client.get(url) {
                     url {
                         parameters.append("firebaseUID", firebaseUID)
@@ -202,7 +202,7 @@
         // Function to check if there is an active SOS ticket for the user
         suspend fun checkActiveTicket(firebaseUID: String): String? {
             try {
-                val url = "https://surakshakawach-mobilebackend-192854867616.asia-south2.run.app/api/v1/ticket/active-ticket"
+                val url = "https://suraksha-kawach-backend-809410945582.us-central1.run.app/api/v1/ticket/active-ticket"
                 val response: HttpResponse = client.get(url) {
                     url {
                         parameters.append("firebaseUID", firebaseUID)
@@ -244,7 +244,7 @@
         ): Boolean {
             try {
                 val response: HttpResponse = client.submitForm(
-                    url = "https://surakshakawach-mobilebackend-192854867616.asia-south2.run.app/api/v1/ticket/coordinates", // Make sure to use the full server URL
+                    url = "https://suraksha-kawach-backend-809410945582.us-central1.run.app/api/v1/ticket/coordinates", // Make sure to use the full server URL
                     formParameters = Parameters.build {
                         append("firebaseUID", firebaseUID)
                         append("ticketId", ticketId)
@@ -270,7 +270,7 @@
         ): Boolean {
             try {
                 val response: HttpResponse = client.submitForm(
-                    url = "https://surakshakawach-mobilebackend-192854867616.asia-south2.run.app/api/v1/ticket/close-ticket",
+                    url = "https://suraksha-kawach-backend-809410945582.us-central1.run.app/api/v1/ticket/close-ticket",
                     formParameters = Parameters.build {
                         append("firebaseUID", firebaseUID)
                         append("ticketId", ticketId)
@@ -287,7 +287,7 @@
         }
 
         suspend fun sendImages(ticketId: String, firebaseUID: String, imagesData: List<ImageData>): Boolean {
-            val url = "https://surakshakawach-mobilebackend-192854867616.asia-south2.run.app/api/v1/ticket/add-images"
+            val url = "https://suraksha-kawach-backend-809410945582.us-central1.run.app/api/v1/ticket/add-images"
             val requestBody = AddImageRequest(ticketId, firebaseUID, imagesData)
 
             return try {
@@ -318,7 +318,7 @@
         }
 
         suspend fun sendAudioClips(ticketId: String, firebaseUID: String, clipsData: List<ClipData>): Boolean {
-            val url = "https://surakshakawach-mobilebackend-192854867616.asia-south2.run.app/api/v1/ticket/add-audio-clips"
+            val url = "https://suraksha-kawach-backend-809410945582.us-central1.run.app/api/v1/ticket/add-audio-clips"
             val requestBody = AddAudioRequest(ticketId, firebaseUID, clipsData)
 
             return try {
@@ -346,7 +346,7 @@
             newContacts: List<EmergencyContact>
         ): Boolean {
             return try {
-                val response: HttpResponse = client.post("https://surakshakawach-mobilebackend-192854867616.asia-south2.run.app/api/v1/user/update/emergency-contact") {
+                val response: HttpResponse = client.post("https://suraksha-kawach-backend-809410945582.us-central1.run.app/api/v1/user/update/emergency-contact") {
                     contentType(ContentType.Application.Json)
                     setBody(
                         UpdateEmergencyContactRequest(
@@ -381,7 +381,7 @@
             contactDetails: List<EmergencyContact>
         ): Boolean {
             return try {
-                val response: HttpResponse = client.post("https://surakshakawach-mobilebackend-192854867616.asia-south2.run.app/api/v1/user/remove/emergency-contact") {
+                val response: HttpResponse = client.post("https://suraksha-kawach-backend-809410945582.us-central1.run.app/api/v1/user/remove/emergency-contact") {
                     contentType(ContentType.Application.Json)
                     setBody(
                         RemoveEmergencyContactRequest(
@@ -412,7 +412,7 @@
 
 
         suspend fun fetchTicketStatus(firebaseUID: String, ticketId: String): TicketInfo? {
-            val url = "https://surakshakawach-mobilebackend-192854867616.asia-south2.run.app/api/v1/ticket?firebaseUID=$firebaseUID&ticketId=$ticketId"
+            val url = "https://suraksha-kawach-backend-809410945582.us-central1.run.app/api/v1/ticket?firebaseUID=$firebaseUID&ticketId=$ticketId"
             Log.d("Api", "Requesting ticket status with URL: $url")
 
             return try {
@@ -444,7 +444,7 @@
         }
 
         suspend fun fetchLatestLocation(firebaseUID: String, ticketId: String): Coordinates? {
-            val url = "https://surakshakawach-mobilebackend-192854867616.asia-south2.run.app/api/v1/ticket/latest-update?firebaseUID=$firebaseUID&ticketId=$ticketId"
+            val url = "https://suraksha-kawach-backend-809410945582.us-central1.run.app/api/v1/ticket/latest-update?firebaseUID=$firebaseUID&ticketId=$ticketId"
             Log.d("Api", "Requesting latest coordinates with URL: $url")
 
             return try {
