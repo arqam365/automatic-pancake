@@ -5,22 +5,15 @@ import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
-import android.graphics.Bitmap
-import android.graphics.BitmapFactory
 import android.media.MediaRecorder
-import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import android.util.Size
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
-import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageCapture
-import androidx.camera.core.ImageCaptureException
-import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -48,40 +41,22 @@ import com.google.android.gms.location.LocationCallback
 import com.google.android.gms.location.LocationRequest
 import com.google.android.gms.location.LocationResult
 import com.google.android.gms.location.LocationServices
-import com.google.firebase.auth.FirebaseAuth
-import com.google.firebase.storage.FirebaseStorage
 import com.nextlevelprogrammers.surakshakawach.api.Api
-import com.nextlevelprogrammers.surakshakawach.api.ClipData
 import com.nextlevelprogrammers.surakshakawach.api.ImageData
 import com.nextlevelprogrammers.surakshakawach.ui.getCurrentTimestamp
 import com.nextlevelprogrammers.surakshakawach.utils.UserSessionManager
-import io.ktor.utils.io.errors.IOException
 import kotlinx.coroutines.launch
-import java.io.ByteArrayOutputStream
 import java.io.File
-import java.io.FileOutputStream
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
 class SOSActivity : ComponentActivity() {
 
     private lateinit var cameraExecutor: ExecutorService
-    private var imageCapture: ImageCapture? = null
     private val handler = Handler(Looper.getMainLooper())
     private var sosTicketId: String? = null
-    private var dynamicInterval: Long = 15000 // Capture every 10 seconds
-    private var isRecordingAudio = false
-    private val audioRecordingInterval: Long = 50000 // 40 seconds interval
-    private val audioRecordingDuration: Long = 15000 // 15 seconds duration
     private lateinit var fusedLocationClient: FusedLocationProviderClient
-    private var isCapturingImages = false
-    private var mediaRecorder: MediaRecorder? = null
     private lateinit var locationCallback: LocationCallback
-    private val imageDataList = mutableListOf<ImageData>()
-    private var lastCaptureTimestamp = 0L // Store the last capture timestamp
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -139,8 +114,6 @@ class SOSActivity : ComponentActivity() {
 
         // Start background tasks
         startCamera()
-        startAudioRecordingAtIntervals()
-        startImageCapture()
         startUpdatingCoordinates()
     }
 
@@ -167,7 +140,6 @@ class SOSActivity : ComponentActivity() {
             } -> {
                 // All permissions are granted, proceed
                 startUpdatingCoordinates()
-                startCamera()
             }
             else -> {
                 // Request multiple permissions
@@ -188,8 +160,6 @@ class SOSActivity : ComponentActivity() {
         onError: (String) -> Unit
     ) {
         // Stop image capture
-        stopCapturingImages()
-        stopAudioRecordingAtIntervals()
         fusedLocationClient.removeLocationUpdates(locationCallback)
 
         // Close the ticket with API call
@@ -214,301 +184,7 @@ class SOSActivity : ComponentActivity() {
     }
 
     private fun startCamera() {
-        val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
 
-        cameraProviderFuture.addListener({
-            val cameraProvider: ProcessCameraProvider = cameraProviderFuture.get()
-
-            // ImageCapture instance
-            imageCapture = ImageCapture.Builder()
-                .setTargetResolution(Size(1080, 1080)) // Set a desired resolution
-                .build()
-
-            // Select back camera as a default
-            val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
-
-            try {
-                // Unbind any previous use cases before rebinding
-                cameraProvider.unbindAll()
-
-                // Bind use cases to the camera
-                cameraProvider.bindToLifecycle(
-                    this, cameraSelector, imageCapture
-                )
-
-                // Start image capture only after the camera is bound
-                startImageCapture()
-
-            } catch (exc: Exception) {
-                Log.e("CameraX", "Use case binding failed", exc)
-            }
-        }, ContextCompat.getMainExecutor(this))
-    }
-
-    private fun startImageCapture() {
-        isCapturingImages = true
-        val imageCaptureRunnable = object : Runnable {
-            override fun run() {
-                if (isCapturingImages) {
-                    val startTime = System.currentTimeMillis()
-
-                    captureImage {
-                        val endTime = System.currentTimeMillis()
-                        val processingTime = endTime - startTime
-
-                        // Set next interval based on processing time with a buffer
-                        dynamicInterval = processingTime + 10000 // Add 10 seconds buffer
-                        Log.d("CameraX", "Dynamic interval adjusted to: $dynamicInterval ms")
-
-                        // Schedule the next capture
-                        handler.postDelayed(this, dynamicInterval)
-                    }
-                }
-            }
-        }
-        handler.post(imageCaptureRunnable)
-    }
-
-    private fun captureImage(onComplete: () -> Unit) {
-        val currentTimestamp = System.currentTimeMillis()
-
-        // Check if the interval has passed since the last capture
-        if (currentTimestamp - lastCaptureTimestamp < dynamicInterval) {
-            Log.d("CameraX", "Skipping capture to respect interval")
-            onComplete()
-            return
-        }
-
-        lastCaptureTimestamp = currentTimestamp
-
-        val imageCapture = imageCapture ?: return onComplete()
-        val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
-        val photoFile = File(externalMediaDirs.first(), "IMG_$timestamp.jpg")
-        val firebaseUID = getFirebaseUIDOrFallback() ?: ""
-
-        val outputOptions = ImageCapture.OutputFileOptions.Builder(photoFile).build()
-
-        imageCapture.takePicture(
-            outputOptions,
-            cameraExecutor,
-            object : ImageCapture.OnImageSavedCallback {
-                override fun onImageSaved(output: ImageCapture.OutputFileResults) {
-                    Log.d("CameraX", "Photo captured: ${photoFile.absolutePath}")
-                    val compressedFile = compressImage(photoFile)
-                    uploadImageToFirebase(compressedFile, firebaseUID, currentTimestamp)
-                    onComplete() // Notify completion
-                }
-
-                override fun onError(exception: ImageCaptureException) {
-                    Log.e("CameraX", "Photo capture failed: ${exception.message}", exception)
-                    onComplete() // Notify completion
-                }
-            }
-        )
-    }
-
-    private fun compressImage(file: File): File {
-        val bitmap = BitmapFactory.decodeFile(file.absolutePath)
-        val targetSize = 100 * 1024 // 100 KB
-        var quality = 100
-        var compressedFile = file
-
-        do {
-            val byteArrayOutputStream = ByteArrayOutputStream()
-            bitmap.compress(Bitmap.CompressFormat.JPEG, quality, byteArrayOutputStream)
-            val compressedData = byteArrayOutputStream.toByteArray()
-
-            compressedFile = File(file.parent, "COMPRESSED_${file.name}")
-            FileOutputStream(compressedFile).use {
-                it.write(compressedData)
-                it.flush()
-            }
-
-            quality -= 5
-        } while (compressedFile.length() > targetSize && quality > 0)
-
-        Log.d("CameraX", "Image compressed to: ${compressedFile.length() / 1024} KB")
-        return compressedFile
-    }
-
-    private fun uploadImageToFirebase(file: File, firebaseUID: String, captureTimestamp: Long) {
-        val fileUri: Uri = Uri.fromFile(file)
-        val fileName = file.name
-        val storageReference = FirebaseStorage.getInstance()
-            .getReference("emergency-images/$fileName")
-
-        storageReference.putFile(fileUri)
-            .addOnSuccessListener {
-                storageReference.downloadUrl.addOnSuccessListener { uri ->
-                    Log.d("SOS_TICKET", "Image uploaded successfully: $uri")
-
-                    val gsBucketUrl = generateGsBucketImagesUrl(fileName)
-
-                    val imageData = ImageData(
-                        url = uri.toString(),
-                        timestamp = captureTimestamp,
-                        gsBucketUrl = gsBucketUrl
-                    )
-                    imageDataList.add(imageData)
-
-                    sendImageDataToBackend(firebaseUID, imageDataList)
-
-                    file.delete()
-                }
-            }
-            .addOnFailureListener {
-                Log.e("SOS_TICKET", "Failed to upload image: ${it.message}")
-            }
-    }
-    private fun sendImageDataToBackend(firebaseUID: String, imagesData: List<ImageData>) {
-        if (sosTicketId != null) {
-            Log.d("SOS_TICKET", "Preparing to send image data to backend. SOS Ticket ID: $sosTicketId")
-
-            lifecycleScope.launch {
-                try {
-                    val modifiedImagesData = imagesData.map { imageData ->
-                        imageData.copy(
-                            gsBucketUrl = generateGsBucketImagesUrl(imageData.url)
-                        )
-                    }
-
-                    Log.d("SOS_TICKET", "Modified Images Data: $modifiedImagesData")
-
-                    val success = Api().sendImages(sosTicketId!!, firebaseUID, modifiedImagesData)
-                    if (success) {
-                        Log.d("SOS_TICKET", "Image data sent successfully to the server")
-                    } else {
-                        Log.e("SOS_TICKET", "Failed to send image data for ticket ID: $sosTicketId")
-                    }
-                } catch (e: Exception) {
-                    Log.e("SOS_TICKET", "Error while sending image data: ${e.localizedMessage}", e)
-                }
-            }
-        } else {
-            Log.e("SOS_TICKET", "Cannot send image data. SOS ticket ID is null.")
-        }
-    }
-
-    private fun generateGsBucketImagesUrl(url: String): String {
-        val bucketName = "suraksha-kawach-24ff7.appspot.com"
-        val folderName = "emergency-images"
-        // Extract the file name without the redundant folder prefix
-        val fileName = url.substringAfterLast("/") // Extract file name
-            .substringBefore("?") // Remove query parameters
-            .replace("emergency-images%2F", "") // Remove "emergency-images%2F" if present
-        return "gs://$bucketName/$folderName/$fileName"
-    }
-
-    private fun generateGsBucketAudioUrl(url: String): String {
-        val bucketName = "suraksha-kawach-24ff7.appspot.com"
-        val folderName = "emergency-audio"
-        // Extract the file name without the redundant folder prefix
-        val fileName = url.substringAfterLast("/") // Extract file name
-            .substringBefore("?") // Remove query parameters
-            .replace("emergency-audio%2F", "") // Remove "emergency-audio%2F" if present
-        return "gs://$bucketName/$folderName/$fileName"
-    }
-
-    private fun startAudioRecordingAtIntervals() {
-        val audioRecordingRunnable = object : Runnable {
-            override fun run() {
-                if (isRecordingAudio) {
-                    startAudioRecording()
-                    handler.postDelayed({ stopAudioRecording() }, audioRecordingDuration)
-                    handler.postDelayed(this, audioRecordingInterval)
-                }
-            }
-        }
-        isRecordingAudio = true
-        handler.post(audioRecordingRunnable)
-    }
-
-    private fun startAudioRecording() {
-        val timestamp = System.currentTimeMillis()
-        val formattedTimestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(Date())
-        val audioFile = File(externalMediaDirs.first(), "AUDIO_$formattedTimestamp.mp3")
-        val firebaseUID = FirebaseAuth.getInstance().currentUser?.uid ?: ""
-
-        mediaRecorder = MediaRecorder().apply {
-            setAudioSource(MediaRecorder.AudioSource.MIC)
-            setOutputFormat(MediaRecorder.OutputFormat.MPEG_4)
-            setOutputFile(audioFile.absolutePath)
-            setAudioEncoder(MediaRecorder.AudioEncoder.AAC)
-            try {
-                prepare()
-                start()
-                Log.d("SOSActivity", "Audio recording started: ${audioFile.absolutePath}")
-            } catch (e: IOException) {
-                Log.e("SOSActivity", "Audio recording failed: ${e.message}")
-            }
-        }
-
-        handler.postDelayed({
-            stopAudioRecording()
-            uploadAudioToFirebase(audioFile, firebaseUID, timestamp)
-        }, audioRecordingDuration)
-    }
-
-    private fun uploadAudioToFirebase(audioFile: File, firebaseUID: String, captureTimestamp: Long) {
-        val firebaseUID = getFirebaseUIDOrFallback() ?: return
-        val fileUri: Uri = Uri.fromFile(audioFile)
-        val fileName = audioFile.name
-        val storageReference = FirebaseStorage.getInstance()
-            .getReference("emergency-audio/${audioFile.name}")
-
-        storageReference.putFile(fileUri)
-            .addOnSuccessListener {
-                Log.d("SOS_TICKET", "Audio uploaded successfully to Firebase Storage.")
-
-                // Get the audio file URL from Firebase
-                storageReference.downloadUrl.addOnSuccessListener { uri ->
-                    val audioUrl = uri.toString()
-                    Log.d("SOS_TICKET", "Audio URL retrieved: $audioUrl")
-
-                    val gsBucketUrl = generateGsBucketAudioUrl(fileName)
-
-                    // Create a ClipData object with URL and timestamp
-                    val clipData = ClipData(url = audioUrl, timestamp = captureTimestamp, gsBucketUrl = gsBucketUrl)
-                    sendClipsDataToBackend(firebaseUID, listOf(clipData))
-
-                    audioFile.delete()
-                }.addOnFailureListener {
-                    Log.e("SOS_TICKET", "Failed to get audio URL: ${it.message}")
-                }
-            }
-            .addOnFailureListener {
-                Log.e("SOS_TICKET", "Failed to upload audio: ${it.message}")
-            }
-    }
-
-    private fun sendClipsDataToBackend(firebaseUID: String, clipsData: List<ClipData>) {
-        if (sosTicketId != null) {
-            Log.d("SOS_TICKET", "Preparing to send audio clip data to backend. SOS Ticket ID: $sosTicketId")
-
-            lifecycleScope.launch {
-                try {
-                    val modifiedClipsData = clipsData.map { clipData ->
-                        clipData.copy(
-                            gsBucketUrl = generateGsBucketAudioUrl(clipData.url)
-                        )
-                    }
-
-                    Log.d("SOS_TICKET", "Modified Clips Data: $modifiedClipsData")
-
-
-                    val success = Api().sendAudioClips(sosTicketId!!, firebaseUID, modifiedClipsData)
-                    if (success) {
-                        Log.d("SOS_TICKET", "Audio clip data sent successfully to the server")
-                    } else {
-                        Log.e("SOS_TICKET", "Failed to send audio clip data for ticket ID: $sosTicketId")
-                    }
-                } catch (e: Exception) {
-                    Log.e("SOS_TICKET", "Error while sending audio clip data: ${e.localizedMessage}", e)
-                }
-            }
-        } else {
-            Log.e("SOS_TICKET", "Cannot send audio clip data. SOS ticket ID is null.")
-        }
     }
 
     private fun startUpdatingCoordinates() {
@@ -587,28 +263,6 @@ class SOSActivity : ComponentActivity() {
     }
 
 
-    private fun stopAudioRecording() {
-        mediaRecorder?.apply {
-            stop()
-            release()
-        }
-        mediaRecorder = null
-        Log.d("SOSActivity", "Audio recording stopped.")
-    }
-
-    private fun stopCapturingImages() {
-        isCapturingImages = false
-        handler.removeCallbacksAndMessages(null)
-        Log.d("SOSActivity", "Stopped capturing images.")
-    }
-
-    private fun stopAudioRecordingAtIntervals() {
-        isRecordingAudio = false
-        handler.removeCallbacksAndMessages(null)
-        stopAudioRecording()
-    }
-
-
     private fun closeSOSTicket(onSuccess: () -> Unit, onError: (String) -> Unit) {
         val firebaseUID = getFirebaseUIDOrFallback()
         val api = Api()
@@ -653,8 +307,6 @@ class SOSActivity : ComponentActivity() {
         super.onDestroy()
 
         // Stop all background tasks
-        stopCapturingImages()
-        stopAudioRecordingAtIntervals()
         stopUpdatingCoordinates()
 
         // Shutdown camera executor
