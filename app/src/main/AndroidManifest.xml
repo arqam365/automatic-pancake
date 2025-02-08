@@ -102,12 +102,6 @@
             </intent-filter>
         </activity>
 
-        <activity
-            android:name=".WatchActivity"
-            android:exported="true"
-            android:label="WatchScreen"
-            android:theme="@style/Theme.SurakshaKawach"/>
-
         <activity android:name=".SOSActivity"
             android:exported="true"
             android:label="SOSActivity"
@@ -115,7 +109,7 @@
 
         <meta-data
             android:name="com.google.android.geo.API_KEY"
-            android:value="AIzaSyCc2303_jhx_vQKD2j-KyaPR_P7YApKsnw" />
+            android:value="AIzaSyDQ3_mZlf-YCLeahhvoegFaefuWEpweOQ8" />
 
         <meta-data
             android:name="androidx.camera.default.impl"
