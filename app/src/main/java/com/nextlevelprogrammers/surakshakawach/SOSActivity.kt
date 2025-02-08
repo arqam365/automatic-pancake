@@ -432,3 +432,5 @@ private fun navigateToHome(context: Context) {
     context.startActivity(intent)
     (context as? Activity)?.finish() // Finish the current activity
 }
+
+//test
