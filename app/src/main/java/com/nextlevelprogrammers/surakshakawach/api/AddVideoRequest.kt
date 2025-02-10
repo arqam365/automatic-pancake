@@ -12,5 +12,6 @@ data class AddVideoRequest(
 @Serializable
 data class VideoClipData(
     val url: String,
-    val timestamp: Long
+    val timestamp: Long,
+    val gsBucketUrl: String
 )

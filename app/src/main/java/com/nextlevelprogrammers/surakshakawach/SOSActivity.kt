@@ -11,6 +11,7 @@ import android.os.Environment
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
+import android.util.Size
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.result.contract.ActivityResultContracts
@@ -19,12 +20,20 @@ import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.video.*
 import androidx.camera.video.FileOutputOptions
 import androidx.camera.video.VideoRecordEvent
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.material3.Button
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
@@ -33,45 +42,59 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
+import com.google.android.gms.location.*
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
 import com.nextlevelprogrammers.surakshakawach.api.Api
 import com.nextlevelprogrammers.surakshakawach.api.VideoClipData
 import com.nextlevelprogrammers.surakshakawach.ui.getCurrentTimestamp
 import com.nextlevelprogrammers.surakshakawach.utils.UserSessionManager
-import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 
 class SOSActivity : ComponentActivity() {
 
-    // CameraX VideoCapture properties (we bind only the VideoCapture use case)
+    // --- Location Updates ---
+    private lateinit var fusedLocationClient: FusedLocationProviderClient
+    private lateinit var locationCallback: LocationCallback
+    // A dedicated handler for any scheduled coordinate tasks
+    private val coordinateUpdateHandler = Handler(Looper.getMainLooper())
+
+    // --- Video Recording with CameraX ---
+    private lateinit var cameraExecutor: ExecutorService
     private var videoCapture: VideoCapture<Recorder>? = null
     private var recording: Recording? = null
 
+    // --- Firebase Storage Reference ---
     private lateinit var storageReference: StorageReference
+
+    // --- Handler for scheduling tasks ---
     private val handler = Handler(Looper.getMainLooper())
 
-    // Video recording settings: 15 seconds recording, 25 seconds cycle (15 sec recording + 10 sec break)
-    private val recordingDuration = 15000L
-    private val recordingInterval = 25000L
+    // --- Video recording settings ---
+    private val recordingDuration = 15000L  // 15 seconds per clip
+    private val recordingInterval = 25000L   // 25-second cycle (15 sec recording + 10 sec break)
 
-    // SOS ticket and user information
+    // --- SOS ticket and user info ---
     private var sosTicketId: String? = null
     private var firebaseUID: String? = null
 
-    // Permissions launcher for CAMERA and WRITE_EXTERNAL_STORAGE
+    // --- Permissions Launcher for CAMERA, STORAGE, and LOCATION ---
     private val permissionsLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
     ) { permissions ->
+        Log.d("SOSActivity", "Permissions result: $permissions")
         val allGranted = permissions.entries.all { it.value }
         if (allGranted) {
             Log.d("SOSActivity", "All required permissions granted.")
             bindCamera()
             scheduleVideoRecording()
+            startUpdatingCoordinates()
         } else {
             Log.e("SOSActivity", "Required permissions not granted: $permissions")
         }
@@ -86,17 +109,30 @@ class SOSActivity : ComponentActivity() {
         // Retrieve SOS Ticket ID and Firebase UID from intent/session
         sosTicketId = intent.getStringExtra("sosTicketId")
         firebaseUID = getFirebaseUIDOrFallback()
-
         if (sosTicketId.isNullOrEmpty() || firebaseUID.isNullOrEmpty()) {
             Log.e("SOSActivity", "SOS Ticket ID or Firebase UID is null. Cannot proceed.")
             finish()
             return
         }
 
+        // Initialize fusedLocationClient and location callback.
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+        locationCallback = object : LocationCallback() {
+            override fun onLocationResult(locationResult: LocationResult) {
+                locationResult.lastLocation?.let { location ->
+                    Log.d("SOSActivity", "Received location update: ${location.latitude}, ${location.longitude}")
+                    updateCoordinates(location.latitude, location.longitude)
+                }
+            }
+        }
+
+        cameraExecutor = Executors.newSingleThreadExecutor()
+        fusedLocationClient = LocationServices.getFusedLocationProviderClient(this)
+
+        // Set up the Compose UI.
         setContent {
             val isTicketClosed = remember { mutableStateOf(false) }
             val errorMessage = remember { mutableStateOf<String?>(null) }
-
             SOSScreen(
                 onCloseTicket = {
                     closeSOSTicket(
@@ -109,59 +145,87 @@ class SOSActivity : ComponentActivity() {
                             Log.e("SOSActivity", "Failed to close SOS ticket: $error")
                         }
                     )
+                    finish()
                 },
                 isTicketClosed = isTicketClosed.value,
                 errorMessage = errorMessage.value
             )
         }
 
+        // Check for required permissions.
         if (checkPermissions()) {
             Log.d("SOSActivity", "Permissions already granted.")
             bindCamera()
             scheduleVideoRecording()
+            startUpdatingCoordinates()
         } else {
             permissionsLauncher.launch(
                 arrayOf(
                     Manifest.permission.CAMERA,
-                    Manifest.permission.WRITE_EXTERNAL_STORAGE
-                    // Uncomment and add Manifest.permission.RECORD_AUDIO if audio is needed.
+                    Manifest.permission.WRITE_EXTERNAL_STORAGE,
+                    Manifest.permission.ACCESS_FINE_LOCATION,
+                    Manifest.permission.ACCESS_COARSE_LOCATION
+                    // Add RECORD_AUDIO if needed.
                 )
             )
         }
+
+        // Start the SOS background service.
+        startSOSService()
+    }
+
+    private fun startSOSService() {
+        val serviceIntent = Intent(this, SOSBackgroundService::class.java)
+        serviceIntent.putExtra("sosTicketId", sosTicketId)
+        ContextCompat.startForegroundService(this, serviceIntent)
+        Log.d("SOSActivity", "SOS service started.")
+    }
+
+    private fun getFirebaseUIDOrFallback(): String? {
+        val sessionData = UserSessionManager.getSession(this)
+        val firebaseUID = sessionData["userId"]
+        if (firebaseUID.isNullOrEmpty()) {
+            Log.e("SOSActivity", "Firebase UID not found in session.")
+            return null
+        }
+        return firebaseUID
     }
 
     /**
-     * Checks that CAMERA and WRITE_EXTERNAL_STORAGE permissions are granted.
+     * Checks that CAMERA, WRITE_EXTERNAL_STORAGE, and LOCATION permissions are granted.
+     * (For Android Q and above, WRITE_EXTERNAL_STORAGE is not required if using getExternalFilesDir().)
      */
     private fun checkPermissions(): Boolean {
         return ContextCompat.checkSelfPermission(this, Manifest.permission.CAMERA) ==
                 PackageManager.PERMISSION_GRANTED &&
-                // Only check WRITE_EXTERNAL_STORAGE if necessary.
                 (if (android.os.Build.VERSION.SDK_INT < android.os.Build.VERSION_CODES.Q)
                     ContextCompat.checkSelfPermission(this, Manifest.permission.WRITE_EXTERNAL_STORAGE)
                             == PackageManager.PERMISSION_GRANTED
-                else true)
+                else true) &&
+                ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) ==
+                PackageManager.PERMISSION_GRANTED &&
+                ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) ==
+                PackageManager.PERMISSION_GRANTED
     }
 
     /**
-     * Binds the VideoCapture use case (without a Preview) to the activity's lifecycle.
+     * Binds the VideoCapture use case (without a preview UI) to the activity's lifecycle.
      */
     private fun bindCamera() {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(this)
         cameraProviderFuture.addListener({
-            val cameraProvider = cameraProviderFuture.get()
-            // Build a Recorder with the highest available quality.
-            val recorder = Recorder.Builder()
-                .setQualitySelector(QualitySelector.from(Quality.HIGHEST))
-                .build()
-            videoCapture = VideoCapture.withOutput(recorder)
-            val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
             try {
+                val cameraProvider = cameraProviderFuture.get()
+                val recorder = Recorder.Builder()
+                    .setQualitySelector(QualitySelector.from(Quality.HIGHEST))
+                    .build()
+                videoCapture = VideoCapture.withOutput(recorder)
+                val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
                 cameraProvider.unbindAll()
                 cameraProvider.bindToLifecycle(this, cameraSelector, videoCapture)
                 Log.d("SOSActivity", "VideoCapture use case bound successfully.")
             } catch (exc: Exception) {
-                Log.e("SOSActivity", "Use case binding failed: ${exc.message}", exc)
+                Log.e("SOSActivity", "Failed to bind VideoCapture use case: ${exc.message}", exc)
             }
         }, ContextCompat.getMainExecutor(this))
     }
@@ -175,20 +239,18 @@ class SOSActivity : ComponentActivity() {
                 if (recording == null) {
                     Log.d("SOSActivity", "Starting new video recording session.")
                     startVideoRecording()
-                    // Stop recording after the specified duration.
                     handler.postDelayed({
                         Log.d("SOSActivity", "Stopping video recording after duration.")
                         recording?.stop()
                     }, recordingDuration)
                 }
-                // Reschedule after the total cycle time.
                 handler.postDelayed(this, recordingInterval)
             }
         })
     }
 
     /**
-     * Starts a video recording session without opening any preview UI.
+     * Starts a video recording session (without any preview UI) and listens for recording events.
      */
     private fun startVideoRecording() {
         val outputFile = createVideoFile()
@@ -196,7 +258,7 @@ class SOSActivity : ComponentActivity() {
         val outputOptions = FileOutputOptions.Builder(outputFile).build()
         recording = videoCapture?.output
             ?.prepareRecording(this, outputOptions)
-            // Chain .withAudioEnabled() if you require audio.
+            // Chain .withAudioEnabled() if audio is required.
             ?.start(ContextCompat.getMainExecutor(this)) { event ->
                 when (event) {
                     is VideoRecordEvent.Start -> {
@@ -204,7 +266,7 @@ class SOSActivity : ComponentActivity() {
                     }
                     is VideoRecordEvent.Finalize -> {
                         if (!event.hasError()) {
-                            Log.d("SOSActivity", "Video recording finalized successfully: ${outputFile.absolutePath}")
+                            Log.d("SOSActivity", "Video recording finalized: ${outputFile.absolutePath}")
                             val captureTimestamp = System.currentTimeMillis()
                             uploadToFirebase(outputFile, firebaseUID!!, captureTimestamp)
                         } else {
@@ -217,7 +279,7 @@ class SOSActivity : ComponentActivity() {
     }
 
     /**
-     * Creates a temporary file to store the recorded video.
+     * Creates a temporary video file.
      */
     private fun createVideoFile(): File {
         val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
@@ -226,7 +288,7 @@ class SOSActivity : ComponentActivity() {
     }
 
     /**
-     * Uploads the recorded video file to Firebase Storage and sends its metadata to the backend.
+     * Uploads the recorded video file to Firebase Storage and sends its URL to your backend.
      */
     private fun uploadToFirebase(videoFile: File, firebaseUID: String, captureTimestamp: Long) {
         val fileUri: Uri = Uri.fromFile(videoFile)
@@ -235,16 +297,17 @@ class SOSActivity : ComponentActivity() {
         Log.d("SOS_TICKET", "Uploading video file: $fileName")
         videoRef.putFile(fileUri)
             .addOnSuccessListener {
-                Log.d("SOS_TICKET", "Video file uploaded. Retrieving download URL...")
+                Log.d("SOS_TICKET", "Video file uploaded successfully. Retrieving download URL...")
                 videoRef.downloadUrl.addOnSuccessListener { uri ->
                     Log.d("SOS_TICKET", "Download URL retrieved: $uri")
                     val gsBucketUrl = generateGsBucketVideoUrl(fileName)
                     val videoData = VideoClipData(
                         url = uri.toString(),
-                        timestamp = captureTimestamp
+                        timestamp = captureTimestamp,
+                        gsBucketUrl = gsBucketUrl
                     )
                     sendVideoClips(firebaseUID, listOf(videoData))
-                    videoFile.delete() // Clean up local file.
+                    videoFile.delete() // Clean up the local file.
                 }
             }
             .addOnFailureListener {
@@ -253,13 +316,24 @@ class SOSActivity : ComponentActivity() {
     }
 
     /**
-     * Sends video clip metadata to the backend API.
+     * Sends the video clip metadata to your backend API.
      */
     private fun sendVideoClips(firebaseUID: String, videoDataList: List<VideoClipData>) {
         sosTicketId?.let { ticketId ->
             Log.d("SOS_TICKET", "Sending video clip data for SOS Ticket ID: $ticketId")
             lifecycleScope.launch {
                 try {
+                    val modifiedVideoData = videoDataList.map { videoData ->
+                        // Extract the file name from the URL (if required) for the gs:// path
+                        videoData.copy(
+                            gsBucketUrl = generateGsBucketVideoUrl(
+                                videoData.url.substringAfterLast("/")
+                            )
+                        )
+                    }
+
+                    Log.d("SOS_TICKET", "Modified Video Data: $modifiedVideoData")
+
                     val success = Api().sendVideoClips(ticketId, firebaseUID, videoDataList)
                     if (success) {
                         Log.d("SOS_TICKET", "Video clip data sent successfully to server.")
@@ -285,52 +359,118 @@ class SOSActivity : ComponentActivity() {
     }
 
     /**
-     * Closes the SOS ticket by calling your API, stops background tasks, and navigates home.
+     * Starts location updates to continuously send coordinates to the backend.
      */
-    private fun closeSOSTicket(onSuccess: () -> Unit, onError: (String) -> Unit) {
-        val api = Api()
-        lifecycleScope.launch(Dispatchers.IO) {
-            try {
-                val response = api.closeTicket(firebaseUID!!, sosTicketId!!)
-                if (response) {
-                    Log.d("SOSActivity", "SOS ticket closed successfully.")
-                    stopAllBackgroundTasks()
-                    navigateToHome(this@SOSActivity)
-                    onSuccess()
-                } else {
-                    onError("Failed to close SOS ticket.")
-                }
-            } catch (e: Exception) {
-                onError("Error closing SOS ticket: ${e.message}")
+    private fun startUpdatingCoordinates() {
+        val locationRequest = LocationRequest.create().apply {
+            interval = 5000      // 5 seconds
+            fastestInterval = 2000
+            priority = LocationRequest.PRIORITY_HIGH_ACCURACY
+        }
+        Log.d("SOS_TICKET", "Requesting location updates...")
+        if (ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) != PackageManager.PERMISSION_GRANTED ||
+            ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) != PackageManager.PERMISSION_GRANTED
+        ) {
+            Log.e("SOS_TICKET", "Location permissions are not granted.")
+            return
+        }
+        fusedLocationClient.requestLocationUpdates(locationRequest, locationCallback, Looper.getMainLooper())
+    }
+
+    /**
+     * Sends updated coordinates to the backend.
+     */
+    private fun updateCoordinates(latitude: Double, longitude: Double) {
+        Log.d("SOS_TICKET", "Updating coordinates: lat=$latitude, lon=$longitude, ticketId=$sosTicketId")
+        val uid = getFirebaseUIDOrFallback() ?: run {
+            Log.e("SOS_TICKET", "Firebase UID is null. Cannot update coordinates.")
+            return
+        }
+        val timestamp = getCurrentTimestamp()
+        lifecycleScope.launch {
+            val success = Api().updateCoordinates(
+                firebaseUID = uid,
+                ticketId = sosTicketId!!,
+                latitude = latitude.toString(),
+                longitude = longitude.toString(),
+                timestamp = timestamp
+            )
+            if (success) {
+                Log.d("SOS_TICKET", "Coordinates updated for ticket ID: $sosTicketId")
+            } else {
+                Log.e("SOS_TICKET", "Failed to update coordinates for ticket ID: $sosTicketId")
             }
         }
     }
 
     /**
-     * Stops all background tasks.
+     * Stops sending location updates.
      */
-    private fun stopAllBackgroundTasks() {
-        handler.removeCallbacksAndMessages(null)
-        Log.d("SOSActivity", "Stopped all background tasks.")
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        handler.removeCallbacksAndMessages(null)
+    private fun stopUpdatingCoordinates() {
+        // Remove callbacks from our dedicated coordinate handler.
+        coordinateUpdateHandler.removeCallbacksAndMessages(null)
+        // Also remove location updates from fusedLocationClient.
+        if (::fusedLocationClient.isInitialized) {
+            fusedLocationClient.removeLocationUpdates(locationCallback)
+            Log.d("SOS_TICKET", "Stopped sending coordinates updates.")
+        } else {
+            Log.d("SOS_TICKET", "FusedLocationClient not initialized; no location updates to stop.")
+        }
     }
 
     /**
-     * Retrieves the Firebase UID from the user session.
+     * Closes the SOS ticket by calling your API, stops background tasks, and navigates home.
      */
-    private fun getFirebaseUIDOrFallback(): String? {
-        val sessionData = UserSessionManager.getSession(this)
-        return sessionData["userId"]?.takeIf { it.isNotEmpty() }
+    private fun closeSOSTicket(onSuccess: () -> Unit, onError: (String) -> Unit) {
+        val firebaseUID = getFirebaseUIDOrFallback()
+        val api = Api()
+        if (firebaseUID != null && sosTicketId != null) {
+            Log.d("SOS_TICKET", "Attempting to close ticket with ID: $sosTicketId for UID: $firebaseUID")
+            lifecycleScope.launch {
+                try {
+                    val success = Api().closeTicket(firebaseUID, sosTicketId!!)
+                    if (success) {
+                        onSuccess()
+                        Log.d("SOS_TICKET", "Ticket closed successfully for UID: $firebaseUID, Ticket ID: $sosTicketId")
+                        stopSendingLocation()
+                        navigateToHome(this@SOSActivity)
+                    } else {
+                        onError("Failed to close the ticket.")
+                        Log.e("SOS_TICKET", "Failed to close ticket for UID: $firebaseUID, Ticket ID: $sosTicketId")
+                    }
+                } catch (e: Exception) {
+                    Log.e("SOS_TICKET", "Error closing ticket for UID: $firebaseUID - ${e.localizedMessage}")
+                    onError("Error closing the ticket: ${e.localizedMessage}")
+                }
+            }
+        } else {
+            onError("No active ticket found or user is not logged in.")
+            Log.e("SOS_TICKET", "No active ticket found or user is not logged in.")
+        }
+    }
+
+    private fun stopSendingLocation() {
+        stopUpdatingCoordinates() // Already safely stops both handler callbacks and location updates.
+    }
+
+    override fun onDestroy() {
+        val sharedDir = File(applicationContext.filesDir, "shared")
+        if (sharedDir.exists()) {
+            sharedDir.deleteRecursively()
+        }
+        super.onDestroy()
+        // Stop all background tasks
+        stopUpdatingCoordinates()
+        if (::cameraExecutor.isInitialized) {
+            cameraExecutor.shutdown()
+            Log.d("SOS_TICKET", "Camera executor shutdown successfully.")
+        } else {
+            Log.e("SOS_TICKET", "Camera executor was not initialized, skipping shutdown.")
+        }
+        handler.removeCallbacksAndMessages(null)
     }
 }
 
-/**
- * Compose UI for SOS Screen.
- */
 @Composable
 fun SOSScreen(
     onCloseTicket: () -> Unit,
@@ -363,10 +503,7 @@ fun SOSScreen(
             if (isTicketClosed) {
                 Text(
                     text = "SOS Ticket closed successfully.",
-                    style = MaterialTheme.typography.bodyLarge.copy(
-                        fontSize = 18.sp,
-                        color = MaterialTheme.colorScheme.primary
-                    ),
+                    style = MaterialTheme.typography.bodyLarge.copy(fontSize = 18.sp, color = MaterialTheme.colorScheme.primary),
                     modifier = Modifier.padding(bottom = 16.dp)
                 )
             }
@@ -392,10 +529,11 @@ fun SOSScreen(
                 }
             }
             Button(
-                onClick = { navigateToHome(context) },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(top = 16.dp)
+                onClick = {
+                    stopUpdatingCoordinates()
+                    navigateToHome(context)
+                },
+                modifier = Modifier.fillMaxWidth().padding(top = 16.dp)
             ) {
                 Text(text = "Go Back to Home")
             }
@@ -403,11 +541,19 @@ fun SOSScreen(
     }
 }
 
+private val coordinateUpdateHandler = Handler(Looper.getMainLooper())
+
+// Function to stop sending coordinate updates when SOS is stopped
+private fun stopUpdatingCoordinates() {
+    coordinateUpdateHandler.removeCallbacksAndMessages(null)
+    Log.d("SOSActivity", "Stopped sending coordinates updates.")
+}
+
 /**
  * Navigates back to HomeActivity.
  */
-fun navigateToHome(context: Context) {
+private fun navigateToHome(context: Context) {
     val intent = Intent(context, HomeActivity::class.java)
     context.startActivity(intent)
-    (context as? Activity)?.finish() // Finish the current activity
+    (context as? Activity)?.finish()
 }
