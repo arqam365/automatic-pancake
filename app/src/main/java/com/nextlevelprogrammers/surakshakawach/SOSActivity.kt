@@ -1,6 +1,7 @@
 package com.nextlevelprogrammers.surakshakawach
 
 import android.Manifest
+import android.app.Activity
 import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
@@ -230,7 +231,7 @@ class SOSActivity : ComponentActivity() {
     private fun uploadToFirebase(videoFile: File, firebaseUID: String, captureTimestamp: Long) {
         val fileUri: Uri = Uri.fromFile(videoFile)
         val fileName = videoFile.name
-        val videoRef: StorageReference = FirebaseStorage.getInstance().getReference("sos_videos/$fileName")
+        val videoRef: StorageReference = FirebaseStorage.getInstance().getReference("emergency_videos/$fileName")
         Log.d("SOS_TICKET", "Uploading video file: $fileName")
         videoRef.putFile(fileUri)
             .addOnSuccessListener {
@@ -279,7 +280,7 @@ class SOSActivity : ComponentActivity() {
      */
     private fun generateGsBucketVideoUrl(fileName: String): String {
         val bucketName = "suraksha-kawach-151024.firebasestorage.app"
-        val folderName = "sos_videos"
+        val folderName = "emergency_videos"
         return "gs://$bucketName/$folderName/$fileName"
     }
 
