@@ -408,7 +408,5 @@ fun SOSScreen(
 fun navigateToHome(context: Context) {
     val intent = Intent(context, HomeActivity::class.java)
     context.startActivity(intent)
-    if (context is ComponentActivity) {
-        context.finish()
-    }
+    (context as? Activity)?.finish() // Finish the current activity
 }
