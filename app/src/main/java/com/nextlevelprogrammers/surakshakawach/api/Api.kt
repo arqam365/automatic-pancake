@@ -286,37 +286,6 @@
             }
         }
 
-        suspend fun sendImages(ticketId: String, firebaseUID: String, imagesData: List<ImageData>): Boolean {
-            val url = "https://suraksha-kawach-backend-809410945582.us-central1.run.app/api/v1/ticket/add-images"
-            val requestBody = AddImageRequest(ticketId, firebaseUID, imagesData)
-
-            return try {
-                val response: HttpResponse = client.post(url) {
-                    contentType(ContentType.Application.Json)
-                    setBody(requestBody)  // Serializing the AddImageRequest object to JSON
-                }
-
-                Log.d("API_SEND_IMAGES", "Response status: ${response.status}, Body: ${response.bodyAsText()}")
-
-                if (response.status == HttpStatusCode.OK) {
-                    Log.d("API_SEND_IMAGES", "Image data sent successfully. Status: ${response.status}")
-                    true
-                } else {
-                    Log.e("API_SEND_IMAGES", "Failed to send image data. Status: ${response.status}")
-                    false
-                }
-            } catch (e: ClientRequestException) {
-                Log.e("API_SEND_IMAGES", "Client request error: ${e.localizedMessage}", e)
-                false
-            } catch (e: ServerResponseException) {
-                Log.e("API_SEND_IMAGES", "Server response error: ${e.localizedMessage}", e)
-                false
-            } catch (e: Exception) {
-                Log.e("API_SEND_IMAGES", "Unexpected error: ${e.localizedMessage}", e)
-                false
-            }
-        }
-
         suspend fun sendAudioClips(ticketId: String, firebaseUID: String, clipsData: List<ClipData>): Boolean {
             val url = "https://suraksha-kawach-backend-809410945582.us-central1.run.app/api/v1/ticket/add-audio-clips"
             val requestBody = AddAudioRequest(ticketId, firebaseUID, clipsData)
@@ -335,6 +304,38 @@
                 }
             } catch (e: Exception) {
                 println("Error sending audio clips: ${e.message}")
+                false
+            }
+        }
+
+        suspend fun sendVideoClips(
+            ticketId: String,
+            firebaseUID: String,
+            clipsData: List<VideoClipData>
+        ): Boolean {
+            val url = "https://suraksha-kawach-backend-809410945582.us-central1.run.app/api/v1/ticket/add-video-clips"
+            val requestBody = AddVideoRequest(ticketId, firebaseUID, clipsData)
+
+            return try {
+                val response: HttpResponse = client.post(url) {
+                    contentType(ContentType.Application.Json)
+                    setBody(requestBody)
+                }
+                if (response.status.isSuccess()) {
+                    Log.d("API_SEND_VIDEOS", "Video clips sent successfully. Status: ${response.status}")
+                    true
+                } else {
+                    Log.e("API_SEND_VIDEOS", "Failed to send video clips. Status: ${response.status}")
+                    false
+                }
+            } catch (e: ClientRequestException) {
+                Log.e("API_SEND_VIDEOS", "Client request error: ${e.localizedMessage}", e)
+                false
+            } catch (e: ServerResponseException) {
+                Log.e("API_SEND_VIDEOS", "Server response error: ${e.localizedMessage}", e)
+                false
+            } catch (e: Exception) {
+                Log.e("API_SEND_VIDEOS", "Unexpected error: ${e.localizedMessage}", e)
                 false
             }
         }
