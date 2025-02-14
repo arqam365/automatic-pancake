@@ -40,6 +40,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.lifecycleScope
 import com.google.android.gms.location.*
@@ -84,6 +85,13 @@ class SOSActivity : ComponentActivity() {
     private var sosTicketId: String? = null
     private var firebaseUID: String? = null
 
+    // Configure the quality selector for SD (480p)
+//    val qualitySelector = QualitySelector.from(Quality.SD)
+//    val recorder = Recorder.Builder()
+//        .setQualitySelector(qualitySelector)
+//        .build()
+
+
     // --- Permissions Launcher for CAMERA, STORAGE, and LOCATION ---
     private val permissionsLauncher = registerForActivityResult(
         ActivityResultContracts.RequestMultiplePermissions()
@@ -102,6 +110,8 @@ class SOSActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        logNetworkStatus()
 
         // Initialize Firebase Storage reference (for video uploads)
         storageReference = FirebaseStorage.getInstance().reference.child("sos_videos")
@@ -154,6 +164,15 @@ class SOSActivity : ComponentActivity() {
 
         // Check for required permissions.
         if (checkPermissions()) {
+            // Additional check for audio permission
+            if (ActivityCompat.checkSelfPermission(
+                    this,
+                    Manifest.permission.RECORD_AUDIO
+                ) != PackageManager.PERMISSION_GRANTED
+            ) {
+                // Handle the missing audio permission here if needed
+                return
+            }
             Log.d("SOSActivity", "Permissions already granted.")
             bindCamera()
             scheduleVideoRecording()
@@ -164,8 +183,8 @@ class SOSActivity : ComponentActivity() {
                     Manifest.permission.CAMERA,
                     Manifest.permission.WRITE_EXTERNAL_STORAGE,
                     Manifest.permission.ACCESS_FINE_LOCATION,
-                    Manifest.permission.ACCESS_COARSE_LOCATION
-                    // Add RECORD_AUDIO if needed.
+                    Manifest.permission.ACCESS_COARSE_LOCATION,
+                    Manifest.permission.RECORD_AUDIO
                 )
             )
         }
@@ -205,6 +224,8 @@ class SOSActivity : ComponentActivity() {
                 ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) ==
                 PackageManager.PERMISSION_GRANTED &&
                 ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_COARSE_LOCATION) ==
+                PackageManager.PERMISSION_GRANTED &&
+                ContextCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) ==
                 PackageManager.PERMISSION_GRANTED
     }
 
@@ -216,13 +237,20 @@ class SOSActivity : ComponentActivity() {
         cameraProviderFuture.addListener({
             try {
                 val cameraProvider = cameraProviderFuture.get()
+
                 val recorder = Recorder.Builder()
-                    .setQualitySelector(QualitySelector.from(Quality.HIGHEST))
+                    .setQualitySelector(QualitySelector.from(Quality.SD))
                     .build()
+
                 videoCapture = VideoCapture.withOutput(recorder)
                 val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
+
+                // Unbind before rebinding
                 cameraProvider.unbindAll()
+
+                // Bind lifecycle
                 cameraProvider.bindToLifecycle(this, cameraSelector, videoCapture)
+
                 Log.d("SOSActivity", "VideoCapture use case bound successfully.")
             } catch (exc: Exception) {
                 Log.e("SOSActivity", "Failed to bind VideoCapture use case: ${exc.message}", exc)
@@ -253,24 +281,32 @@ class SOSActivity : ComponentActivity() {
      * Starts a video recording session (without any preview UI) and listens for recording events.
      */
     private fun startVideoRecording() {
+        // Check if RECORD_AUDIO permission is granted
+        if (ActivityCompat.checkSelfPermission(this, Manifest.permission.RECORD_AUDIO) != PackageManager.PERMISSION_GRANTED) {
+            Log.e("SOSActivity", "RECORD_AUDIO permission is not granted.")
+            // Optionally, request the permission or inform the user.
+            return
+        }
+
         val outputFile = createVideoFile()
-        Log.d("SOSActivity", "Preparing video recording. Output file: ${outputFile.absolutePath}")
+//        Log.d("SOSActivity", "Preparing video recording. Output file: ${outputFile.absolutePath}")
         val outputOptions = FileOutputOptions.Builder(outputFile).build()
+
         recording = videoCapture?.output
             ?.prepareRecording(this, outputOptions)
-            // Chain .withAudioEnabled() if audio is required.
+            ?.withAudioEnabled() // Safe to call now, as permission has been checked.
             ?.start(ContextCompat.getMainExecutor(this)) { event ->
                 when (event) {
                     is VideoRecordEvent.Start -> {
-                        Log.d("SOSActivity", "Video recording started.")
+//                        Log.d("SOSActivity", "Video recording started.")
                     }
                     is VideoRecordEvent.Finalize -> {
                         if (!event.hasError()) {
-                            Log.d("SOSActivity", "Video recording finalized: ${outputFile.absolutePath}")
+//                            Log.d("SOSActivity", "Video recording finalized: ${outputFile.absolutePath}")
                             val captureTimestamp = System.currentTimeMillis()
                             uploadToFirebase(outputFile, firebaseUID!!, captureTimestamp)
                         } else {
-                            Log.e("SOSActivity", "Video recording error: ${event.error}")
+//                            Log.e("SOSActivity", "Video recording error: ${event.error}")
                         }
                         recording = null
                     }
@@ -287,32 +323,70 @@ class SOSActivity : ComponentActivity() {
         return File.createTempFile("SOS_$timeStamp", ".mp4", storageDir)
     }
 
-    /**
-     * Uploads the recorded video file to Firebase Storage and sends its URL to your backend.
-     */
+    private fun logNetworkStatus() {
+        val cm = getSystemService(Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager
+        val activeNetwork = cm.activeNetworkInfo
+        if (activeNetwork != null && activeNetwork.isConnected) {
+            Log.d("NETWORK_STATUS", "Connected to ${if (activeNetwork.type == android.net.ConnectivityManager.TYPE_WIFI) "Wi-Fi" else "Mobile Data"}")
+        } else {
+            Log.e("NETWORK_STATUS", "No Internet Connection Detected!")
+        }
+    }
+
     private fun uploadToFirebase(videoFile: File, firebaseUID: String, captureTimestamp: Long) {
+        logNetworkStatus() // Check current network status before uploading
+
         val fileUri: Uri = Uri.fromFile(videoFile)
         val fileName = videoFile.name
         val videoRef: StorageReference = FirebaseStorage.getInstance().getReference("emergency_videos/$fileName")
+
         Log.d("SOS_TICKET", "Uploading video file: $fileName")
-        videoRef.putFile(fileUri)
-            .addOnSuccessListener {
-                Log.d("SOS_TICKET", "Video file uploaded successfully. Retrieving download URL...")
-                videoRef.downloadUrl.addOnSuccessListener { uri ->
-                    Log.d("SOS_TICKET", "Download URL retrieved: $uri")
-                    val gsBucketUrl = generateGsBucketVideoUrl(fileName)
-                    val videoData = VideoClipData(
-                        url = uri.toString(),
-                        timestamp = captureTimestamp,
-                        gsBucketUrl = gsBucketUrl
-                    )
-                    sendVideoClips(firebaseUID, listOf(videoData))
-                    videoFile.delete() // Clean up the local file.
-                }
+
+        val uploadTask = videoRef.putFile(fileUri)
+
+        // Track progress
+        uploadTask.addOnProgressListener { taskSnapshot ->
+            val progress = (100.0 * taskSnapshot.bytesTransferred / taskSnapshot.totalByteCount)
+            Log.d("SOS_TICKET", "Upload Progress: $progress%")
+        }
+
+        // Handle successful upload
+        uploadTask.addOnSuccessListener {
+            Log.d("SOS_TICKET", "Video file uploaded successfully. Retrieving download URL...")
+
+            videoRef.downloadUrl.addOnSuccessListener { uri ->
+                Log.d("SOS_TICKET", "Download URL retrieved: $uri")
+                val gsBucketUrl = generateGsBucketVideoUrl(fileName)
+
+                val videoData = VideoClipData(
+                    url = uri.toString(),
+                    timestamp = captureTimestamp,
+                    gsBucketUrl = gsBucketUrl
+                )
+
+                sendVideoClips(firebaseUID, listOf(videoData))
+                videoFile.delete() // Clean up the local file.
+            }.addOnFailureListener { uriError ->
+                Log.e("SOS_TICKET", "Failed to get download URL: ${uriError.message}", uriError)
             }
-            .addOnFailureListener {
-                Log.e("SOS_TICKET", "Failed to upload video: ${it.message}")
-            }
+        }
+
+        // Handle failures & retry
+        uploadTask.addOnFailureListener { exception ->
+            Log.e("SOS_TICKET", "Failed to upload video: ${exception.message}", exception)
+
+            // Retry upload with a delay if mobile network is unstable
+            Handler(Looper.getMainLooper()).postDelayed({
+                Log.d("SOS_TICKET", "Retrying video upload...")
+                uploadToFirebase(videoFile, firebaseUID, captureTimestamp)
+            }, 5000) // Retry after 5 seconds
+        }
+
+        // Handle paused uploads (resumable uploads)
+        uploadTask.addOnPausedListener {
+            Log.d("SOS_TICKET", "Upload paused. Resuming...")
+            uploadTask.resume()
+        }
     }
 
     /**
