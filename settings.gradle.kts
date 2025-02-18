@@ -16,9 +16,11 @@ dependencyResolutionManagement {
     repositories {
         google()
         mavenCentral()
+        maven("https://jitpack.io")
+
     }
 }
 
-rootProject.name = "Suraksha Kawach"
+rootProject.name = "Suraksha Kavach UI"
 include(":app")
  

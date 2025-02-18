@@ -1,67 +1,48 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    id("com.google.gms.google-services")
-    id("com.google.firebase.crashlytics")
-    id("com.google.firebase.firebase-perf")
-    id("org.jetbrains.kotlin.plugin.serialization") version "2.0.20"
-    id ("com.google.devtools.ksp") version "2.1.10-1.0.29"
     alias(libs.plugins.kotlin.compose)
+    id("com.google.devtools.ksp")
 }
 
 android {
-    namespace = "com.nextlevelprogrammers.surakshakawach"
+    namespace = "com.example.surakshakavachui"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.nextlevelprogrammers.surakshakawach"
-        minSdk = 27
+        applicationId = "com.example.surakshakavachui"
+        minSdk = 24
         targetSdk = 35
-        versionCode = 18
-        versionName = "1.4.5.6"
+        versionCode = 1
+        versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        vectorDrawables {
-            useSupportLibrary = true
-        }
-
-        ndk {
-            debugSymbolLevel = "FULL" // This will generate full debug symbols
-        }
     }
 
     buildTypes {
         release {
-            isMinifyEnabled = true
+            isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            signingConfig = signingConfigs.getByName("debug")
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
     }
     kotlinOptions {
-        jvmTarget = "1.8"
+        jvmTarget = "11"
     }
     buildFeatures {
         compose = true
-    }
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.1"
-    }
-    packaging {
-        resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
-        }
+        viewBinding= true
+        dataBinding = true
     }
 }
 
 dependencies {
-
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -70,16 +51,7 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
-    implementation(libs.androidx.appcompat)
-    implementation(libs.play.services.location)
-    implementation(libs.androidx.navigation.runtime.ktx)
-    implementation(libs.androidx.navigation.compose)
-    implementation(libs.androidx.camera.core)
-    implementation(libs.androidx.camera.lifecycle)
-    implementation(libs.firebase.storage.ktx)
-    implementation (libs.androidx.camera.extensions)
-    implementation (libs.androidx.camera.camera2)
-    implementation(libs.androidx.camera.view)
+    implementation(libs.androidx.ui.viewbinding)
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
     androidTestImplementation(libs.androidx.espresso.core)
@@ -87,38 +59,88 @@ dependencies {
     androidTestImplementation(libs.androidx.ui.test.junit4)
     debugImplementation(libs.androidx.ui.tooling)
     debugImplementation(libs.androidx.ui.test.manifest)
-    implementation (libs.firebase.auth.ktx)
-    implementation (libs.play.services.auth)
-    implementation (libs.accompanist.insets)
-    implementation (platform(libs.firebase.bom))
-    implementation (libs.google.firebase.auth.ktx)
-    implementation(libs.firebase.analytics)
-    implementation(libs.firebase.crashlytics)
-    implementation (libs.play.services.auth)
-    implementation (libs.play.services.base)
-    implementation(libs.firebase.perf)
-    implementation (libs.play.services.maps)
-    implementation (libs.maps.compose)
-    implementation (libs.accompanist.insets.v0263beta)
-    implementation(libs.ktor.client.core)
-    implementation(libs.ktor.client.cio)
-    implementation(libs.ktor.client.serialization)
-    implementation(libs.ktor.client.content.negotiation)
-    implementation(libs.ktor.serialization.kotlinx.json)
-    implementation(libs.kotlinx.serialization.json)
-    implementation (libs.android.maps.utils)
-    implementation (libs.firebase.storage)
-    implementation (libs.integrity)
-    implementation("io.coil-kt:coil-compose:2.7.0")
-    implementation ("androidx.compose.material3:material3:1.3.1")
-    implementation ("ai.picovoice:porcupine-android:3.0.1")
-    implementation ("ai.picovoice:rhino-android:3.0.1")
-    implementation ("androidx.room:room-runtime:2.6.1")
-    ksp ("androidx.room:room-compiler:2.6.1")
-    implementation ("androidx.room:room-ktx:2.6.1")
-    implementation ("androidx.work:work-runtime-ktx:2.10.0")
-    implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.1")
-    implementation ("androidx.media3:media3-exoplayer:1.5.1")
-    implementation ("androidx.media3:media3-ui:1.5.1")
-    implementation("com.google.accompanist:accompanist-swiperefresh:0.36.0")
+
+    // ✅ Ensure correct Compose Animation dependencies
+    implementation(libs.androidx.animation) // Standard Compose animations
+    implementation("androidx.compose.animation:animation-core") // ✅ Fixed syntax
+    val lifecycle_version = "2.8.7"
+    val arch_version = "2.2.0"
+
+    // ViewModel
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycle_version")
+    // ViewModel utilities for Compose
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:$lifecycle_version")
+    // LiveData
+    implementation("androidx.lifecycle:lifecycle-livedata-ktx:$lifecycle_version")
+    // Lifecycles only (without ViewModel or LiveData)
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:$lifecycle_version")
+    // Lifecycle utilities for Compose
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:$lifecycle_version")
+
+    // Saved state module for ViewModel
+    implementation("androidx.lifecycle:lifecycle-viewmodel-savedstate:$lifecycle_version")
+
+    // alternately - if using Java8, use the following instead of lifecycle-compiler
+    implementation("androidx.lifecycle:lifecycle-common-java8:$lifecycle_version")
+
+    // optional - helpers for implementing LifecycleOwner in a Service
+    implementation("androidx.lifecycle:lifecycle-service:$lifecycle_version")
+
+    // optional - ProcessLifecycleOwner provides a lifecycle for the whole application process
+    implementation("androidx.lifecycle:lifecycle-process:$lifecycle_version")
+
+    // optional - ReactiveStreams support for LiveData
+    implementation("androidx.lifecycle:lifecycle-reactivestreams-ktx:$lifecycle_version")
+
+    // optional - Test helpers for LiveData
+    testImplementation("androidx.arch.core:core-testing:$arch_version")
+
+    // optional - Test helpers for Lifecycle runtime
+    testImplementation ("androidx.lifecycle:lifecycle-runtime-testing:$lifecycle_version")
+    implementation ("com.github.Foysalofficial:NafisBottomNav:5.0")
+    // ViewModel
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycle_version")
+    // ViewModel utilities for Compose
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:$lifecycle_version")
+    // LiveData
+    implementation("androidx.lifecycle:lifecycle-livedata-ktx:$lifecycle_version")
+    // Lifecycles only (without ViewModel or LiveData)
+    implementation("androidx.lifecycle:lifecycle-runtime-ktx:$lifecycle_version")
+    // Lifecycle utilities for Compose
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:$lifecycle_version")
+
+    // Saved state module for ViewModel
+    implementation("androidx.lifecycle:lifecycle-viewmodel-savedstate:$lifecycle_version")
+
+    // Annotation processor
+    ksp("androidx.lifecycle:lifecycle-compiler:$lifecycle_version")
+    // alternately - if using Java8, use the following instead of lifecycle-compiler
+    implementation("androidx.lifecycle:lifecycle-common-java8:$lifecycle_version")
+
+    // optional - helpers for implementing LifecycleOwner in a Service
+    implementation("androidx.lifecycle:lifecycle-service:$lifecycle_version")
+
+    // optional - ProcessLifecycleOwner provides a lifecycle for the whole application process
+    implementation("androidx.lifecycle:lifecycle-process:$lifecycle_version")
+
+    // optional - ReactiveStreams support for LiveData
+    implementation("androidx.lifecycle:lifecycle-reactivestreams-ktx:$lifecycle_version")
+
+    // optional - Test helpers for LiveData
+    testImplementation("androidx.arch.core:core-testing:$arch_version")
+
+    // optional - Test helpers for Lifecycle runtime
+    testImplementation ("androidx.lifecycle:lifecycle-runtime-testing:$lifecycle_version")
+
+    implementation("androidx.compose.material3:material3:1.3.1")
+    implementation("androidx.compose.material3:material3-window-size-class:1.3.1")
+    implementation("androidx.compose.material3:material3-adaptive-navigation-suite:1.4.0-alpha08")
+    implementation("androidx.compose.material:material-icons-core:1.6.7")
+    implementation("androidx.compose.material:material-icons-extended:1.6.7")
+    implementation (libs.androidx.room.runtime)
+    ksp (libs.androidx.room.compiler)
+
+    // For Kotlin Coroutines support
+    implementation (libs.androidx.room.ktx)
+
 }

@@ -19,11 +19,3 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
--keep class com.nextlevelprogrammers.surakshakawach.MainActivity {
-    *;
-}
--keep class com.nextlevelprogrammers.surakshakawach.SOSActivity {
-    *;
-}
-
--dontwarn org.slf4j.impl.StaticLoggerBinder
