@@ -32,7 +32,7 @@ import com.example.surakshakavachui.R
 
 fun MainScreenHome(modifier: Modifier) {
     val user_name = "Sharad"
-    val user_profile_picture = painterResource(R.drawable.profile_icon)
+    val user_profile_picture = painterResource(R.drawable.sosbutton)
     Column(
         modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
             .padding(top = 12.dp)

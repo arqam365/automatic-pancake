@@ -1,5 +1,6 @@
 package com.example.surakshakavachui.uidesign
 
+import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeOut
@@ -45,6 +46,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -122,6 +124,7 @@ fun AddContact(showAddDialog:Boolean, onAction: (ContactScreenAction) -> Unit)
 {
     var name by remember{ mutableStateOf("")}
     var number by remember{ mutableStateOf("")}
+    val context= LocalContext.current
     if(showAddDialog){
         AlertDialog(
             onDismissRequest = { onAction(ContactScreenAction.OnCancelSaveContact) },
@@ -142,7 +145,14 @@ fun AddContact(showAddDialog:Boolean, onAction: (ContactScreenAction) -> Unit)
                 }
             },
             confirmButton = {
-                Button(onClick = { onAction(ContactScreenAction.OnClickSaveContact(ContactInfo(name,number))) }) {
+                Button(onClick = {
+                    if(number==""|| number.length!=10 || name==""){
+                        Toast.makeText(context,"Invalid Contact", Toast.LENGTH_SHORT).show()
+                    }else {
+                        onAction(ContactScreenAction.OnClickSaveContact(ContactInfo(name, number)))
+                    }
+                }
+                ) {
                     Text("Save")
                 }
             },
@@ -223,7 +233,7 @@ fun EditContactDialog(
 ) {
     var newName by remember { mutableStateOf(contact.name) }
     var newNumber by remember { mutableStateOf(contact.number) }
-
+    val context= LocalContext.current
     AlertDialog(
         onDismissRequest = { onAction(ContactScreenAction.OnClickEditCancel) },
         title = { Text("Edit Contact") },
@@ -243,7 +253,13 @@ fun EditContactDialog(
             }
         },
         confirmButton = {
-            Button(onClick = {onAction(ContactScreenAction.OnClickEditSave(contact,newName,newNumber)) }) {
+            Button(onClick = {
+                if(newNumber==""|| newNumber.length!=10 || newName==""){
+                    Toast.makeText(context,"Invalid Contact", Toast.LENGTH_SHORT).show()
+                }else {
+                    onAction(ContactScreenAction.OnClickEditSave(contact, newName, newNumber))
+                }
+            }) {
                 Text("Save")
             }
         },

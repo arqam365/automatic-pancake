@@ -38,7 +38,7 @@ fun MainScreen(modifier: Modifier){
         close()
     }
 
-    var selectedIndex by rememberSaveable { mutableIntStateOf(2) }
+    var selectedIndex by rememberSaveable { mutableIntStateOf(0) }
 
     Scaffold(
         topBar = {
