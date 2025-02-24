@@ -124,6 +124,7 @@ fun AddContact(showAddDialog:Boolean, onAction: (ContactScreenAction) -> Unit)
 {
     var name by remember{ mutableStateOf("")}
     var number by remember{ mutableStateOf("")}
+    var email by remember{ mutableStateOf("")}
     val context= LocalContext.current
     if(showAddDialog){
         AlertDialog(
@@ -142,6 +143,14 @@ fun AddContact(showAddDialog:Boolean, onAction: (ContactScreenAction) -> Unit)
                             onValueChange = { number = it },
                             label = { Text("Contact Number") }
                         )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedTextField(
+                            value = email,
+                            onValueChange = { email=it},
+                            label = {
+                                Text("Contact Email")
+                            }
+                        )
                 }
             },
             confirmButton = {
@@ -149,7 +158,7 @@ fun AddContact(showAddDialog:Boolean, onAction: (ContactScreenAction) -> Unit)
                     if(number==""|| number.length!=10 || name==""){
                         Toast.makeText(context,"Invalid Contact", Toast.LENGTH_SHORT).show()
                     }else {
-                        onAction(ContactScreenAction.OnClickSaveContact(ContactInfo(name, number)))
+                        onAction(ContactScreenAction.OnClickSaveContact(ContactInfo(name, number,email)))
                     }
                 }
                 ) {
@@ -177,8 +186,9 @@ fun ContactCard(modifier: Modifier = Modifier, contact: ContactInfo) {
         Column(modifier=modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background)
         .clip(RoundedCornerShape(4.dp))
         ) {
-            Text(text = contact.name, modifier.padding(start = 8.dp))
-            Text(text = contact.number, modifier.padding(start = 8.dp))
+            Text(text = contact.name, modifier.padding(start = 6.dp))
+            Text(text = contact.number, modifier.padding(start = 6.dp))
+            Text(text = contact.email, modifier.padding(start = 6.dp), color = MaterialTheme.colorScheme.primary)
         }
     }
 }
@@ -233,6 +243,7 @@ fun EditContactDialog(
 ) {
     var newName by remember { mutableStateOf(contact.name) }
     var newNumber by remember { mutableStateOf(contact.number) }
+    var newEmail by remember{ mutableStateOf(contact.email)}
     val context= LocalContext.current
     AlertDialog(
         onDismissRequest = { onAction(ContactScreenAction.OnClickEditCancel) },
@@ -250,6 +261,12 @@ fun EditContactDialog(
                     onValueChange = { newNumber = it },
                     label = { Text("Contact Number") }
                 )
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = newEmail,
+                    onValueChange = { newEmail = it },
+                    label = { Text("Contact Number") }
+                )
             }
         },
         confirmButton = {
@@ -257,7 +274,7 @@ fun EditContactDialog(
                 if(newNumber==""|| newNumber.length!=10 || newName==""){
                     Toast.makeText(context,"Invalid Contact", Toast.LENGTH_SHORT).show()
                 }else {
-                    onAction(ContactScreenAction.OnClickEditSave(contact, newName, newNumber))
+                    onAction(ContactScreenAction.OnClickEditSave(contact, newName, newNumber, newEmail))
                 }
             }) {
                 Text("Save")

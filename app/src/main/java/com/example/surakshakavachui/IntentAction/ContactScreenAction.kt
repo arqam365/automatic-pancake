@@ -9,6 +9,6 @@ sealed interface ContactScreenAction {
     data object OnCancelSaveContact:ContactScreenAction
     data class OnSwipeContactDelete(val contact: ContactInfo): ContactScreenAction
     data class OnSwipeContactEdit(val contact: ContactInfo): ContactScreenAction
-    data class OnClickEditSave(val contact: ContactInfo, val newName:String, val newNumber: String): ContactScreenAction
+    data class OnClickEditSave(val contact: ContactInfo, val newName:String, val newNumber: String, val newEmail:String): ContactScreenAction
     data object OnClickEditCancel : ContactScreenAction
 }

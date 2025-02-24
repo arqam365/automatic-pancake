@@ -24,6 +24,7 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.surakshakavachui.R
@@ -83,4 +84,8 @@ fun SOSDisplay(modifier: Modifier){
 
     }
 }
+@Preview(showBackground = true)
+@Composable
+fun PreviewScreen(){
 
+}

@@ -30,7 +30,7 @@ class ContactScreenViewModel: ViewModel() {
             is ContactScreenAction.OnClickEditSave -> {
                 _state.update { it.copy(
                     contactList = state.value.contactList.map {
-                        if(it==action.contact) it.copy(name = action.newName, number = action.newNumber) else it
+                        if(it==action.contact) it.copy(name = action.newName, number = action.newNumber, email = action.newEmail) else it
                     },
                     showEditDialog = false
                 )
