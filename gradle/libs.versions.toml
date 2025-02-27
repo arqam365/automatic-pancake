@@ -1,6 +1,6 @@
 [versions]
-agp = "8.8.0"
-animation = "1.7.7"
+agp = "8.8.1"
+animation = "1.7.8"
 kotlin = "2.1.10"
 coreKtx = "1.15.0"
 junit = "4.13.2"
@@ -8,10 +8,22 @@ junitVersion = "1.2.1"
 espressoCore = "3.6.1"
 lifecycleRuntimeKtx = "2.8.7"
 activityCompose = "1.10.0"
-composeBom = "2025.01.01"
+composeBom = "2025.02.00"
 meowBottomNavigation = "1.3.1"
 roomCompiler = "2.6.1"
 uiViewbinding = "1.7.8"
+googleGmsGoogleServices = "4.4.2"
+firebase-bom = "32.8.0"
+playServicesAuth = "21.2.0"
+junitJupiter = "5.8.1"
+testng = "6.9.6"
+credentials = "1.3.0"
+credentialsPlayServicesAuth = "1.3.0"
+googleid = "1.1.1"
+material = "1.4.0"
+monitor = "1.7.2"
+junitKtx = "1.2.1"
+junitJunit = "4.12"
 
 [libraries]
 androidx-animation = { module = "androidx.compose.animation:animation", version.ref = "animation" }
@@ -35,8 +47,25 @@ androidx-material3 = { group = "androidx.compose.material3", name = "material3" 
 androidx-ui-viewbinding = { group = "androidx.compose.ui", name = "ui-viewbinding", version.ref = "uiViewbinding" }
 meow-bottom-navigation = { module = "com.etebarian:meow-bottom-navigation", version.ref = "meowBottomNavigation" }
 
+# 🔥 Firebase (Managed via BOM)
+firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.ref = "firebase-bom" }
+firebase-auth = { group = "com.google.firebase", name = "firebase-auth" }
+firebase-firestore-ktx = { group = "com.google.firebase", name = "firebase-firestore-ktx" }
+
+# ✅ Google Play Services Auth (Fixes `NoClassDefFoundError`)
+play-services-auth = { group = "com.google.android.gms", name = "play-services-auth", version.ref = "playServicesAuth" }
+junit-jupiter = { group = "org.junit.jupiter", name = "junit-jupiter", version.ref = "junitJupiter" }
+testng = { group = "org.testng", name = "testng", version.ref = "testng" }
+androidx-credentials = { group = "androidx.credentials", name = "credentials", version.ref = "credentials" }
+androidx-credentials-play-services-auth = { group = "androidx.credentials", name = "credentials-play-services-auth", version.ref = "credentialsPlayServicesAuth" }
+googleid = { group = "com.google.android.libraries.identity.googleid", name = "googleid", version.ref = "googleid" }
+material = { group = "com.google.android.material", name = "material", version.ref = "material" }
+androidx-monitor = { group = "androidx.test", name = "monitor", version.ref = "monitor" }
+androidx-junit-ktx = { group = "androidx.test.ext", name = "junit-ktx", version.ref = "junitKtx" }
+junit-junit = { group = "junit", name = "junit", version.ref = "junitJunit" }
+
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
 kotlin-android = { id = "org.jetbrains.kotlin.android", version.ref = "kotlin" }
 kotlin-compose = { id = "org.jetbrains.kotlin.plugin.compose", version.ref = "kotlin" }
-
+google-gms-google-services = { id = "com.google.gms.google-services", version.ref = "googleGmsGoogleServices" }

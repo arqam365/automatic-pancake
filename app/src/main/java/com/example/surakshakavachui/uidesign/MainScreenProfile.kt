@@ -28,20 +28,33 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.surakshakavachui.MainActivity.UserData
 import com.example.surakshakavachui.R
 import com.example.surakshakavachui.ui.theme.SurakshaKavachUITheme
+import com.google.firebase.auth.FirebaseAuth
 
 @Composable
-fun MainScreenProfile(modifier: Modifier=Modifier){
+fun MainScreenProfile(modifier: Modifier = Modifier, onSignOutClick: () -> Unit){
     Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center){
-        ProfileCard()
+        val currentUser: UserData?
+            val firebaseUser = FirebaseAuth.getInstance().currentUser
+              currentUser= firebaseUser?.let {
+                    UserData(
+                        uid = it.uid,
+                        displayName = it.displayName,
+                        email = it.email,
+                        photoUrl = it.photoUrl?.toString(),
+                        phoneNumber = it.phoneNumber
+                    )
+            }
+        ProfileCard(onSignOutClick=onSignOutClick,user=currentUser)
     }
 }
 
 @Composable
-fun ProfileCard(modifier: Modifier=Modifier) {
-    val user_name="Sharad Pratap Singh"
-    val user_email="sharadsengar2003@gmail.com"
+fun ProfileCard(modifier: Modifier = Modifier, onSignOutClick: () -> Unit, user:UserData?) {
+    val user_name= user?.displayName
+    val user_email= user?.email
     val user_gender="Male"
     Box(modifier=modifier.shadow(4.dp, RoundedCornerShape(24.dp)).clip(RoundedCornerShape(24.dp)).background(MaterialTheme.colorScheme.secondaryContainer)){
         Column(
@@ -56,13 +69,13 @@ fun ProfileCard(modifier: Modifier=Modifier) {
             )
             Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)){
                 Text(
-                    text = user_name,
+                    text = if(user_name!=null) user_name else "",
                     textAlign = TextAlign.Center,
                     fontSize = 28.sp,
                     fontWeight = FontWeight.Bold,
                 )
                 Text(
-                    text = user_email,
+                    text = if(user_email!=null) user_email else "",
                     textAlign = TextAlign.Center,
                     fontSize = 18.sp
                 )
@@ -79,7 +92,8 @@ fun ProfileCard(modifier: Modifier=Modifier) {
                     )
                 }
             }
-            Button(onClick = {},
+            Button(onClick = {
+                onSignOutClick()},
                 modifier=modifier.fillMaxWidth(0.8f),
                 shape = RoundedCornerShape(16.dp)
                 ) {
@@ -94,7 +108,7 @@ fun ProfileCard(modifier: Modifier=Modifier) {
 @Composable
 fun DisplyProfile(){
     SurakshaKavachUITheme {
-        MainScreenProfile()
+
     }
 }
 

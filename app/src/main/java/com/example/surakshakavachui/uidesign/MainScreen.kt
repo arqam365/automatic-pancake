@@ -25,10 +25,15 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
+import androidx.navigation.NavController
 import com.example.surakshakavachui.R
 
 @Composable
-fun MainScreen(modifier: Modifier){
+fun MainScreen(
+    modifier: Modifier = Modifier,
+    navController: NavController,
+    onSignOutClick: () -> Unit
+){
 
     val BottomShadowShape = GenericShape { size, _ ->
         moveTo(0f, 0f)
@@ -79,7 +84,7 @@ fun MainScreen(modifier: Modifier){
             when (selectedIndex) {
                 0 -> MainScreenHome(Modifier)
                 1 -> MainScreenContactRoot(Modifier)
-                2 -> MainScreenProfile()
+                2 -> MainScreenProfile(onSignOutClick=onSignOutClick)
             }
         }
     }

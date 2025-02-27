@@ -8,6 +8,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.sp
 import com.example.surakshakavachui.R
 
+
 // Define Custom FontFamily
 val dm_sans = FontFamily(
     Font(R.font.dm_sans, FontWeight.Normal),  // Regular

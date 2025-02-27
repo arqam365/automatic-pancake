@@ -1,6 +1,5 @@
 package com.example.surakshakavachui.uidesign
 
-import android.content.Intent
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.animation.AnimatedContent
@@ -50,7 +49,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.surakshakavachui.HomeScreenActivity
+import androidx.navigation.NavController
 import com.example.surakshakavachui.R
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -58,7 +57,12 @@ import kotlinx.coroutines.launch
 @RequiresApi(Build.VERSION_CODES.Q)
 @OptIn(ExperimentalAnimationApi::class)
 @Composable
-fun GetStartedLogin(modifier: Modifier=Modifier.background(color = colorResource(R.color.background))){
+fun GetStartedLogin(
+    modifier: Modifier = Modifier.background(color = colorResource(R.color.background)),
+    navController: NavController,
+    onGoogleSignInClick: () -> Unit
+){
+
 
 
     var currentIndex by remember{ mutableIntStateOf(0) }
@@ -91,12 +95,24 @@ fun GetStartedLogin(modifier: Modifier=Modifier.background(color = colorResource
         colorResource(R.color.background)
     )}
 
-    ScreenWithGradient(modifier=Modifier, colorStops, currentIndex, indicatorPosition)
+    ScreenWithGradient(modifier=Modifier,
+        colorStops,
+        currentIndex,
+        indicatorPosition,
+        navController,
+        onGoogleSignInClick)
 
 }
 
 @Composable
-fun ScreenWithGradient(modifier: Modifier, colorStops:List<Color>, currentIndex:Int, indicatorPosition:Float){
+fun ScreenWithGradient(
+    modifier: Modifier,
+    colorStops: List<Color>,
+    currentIndex: Int,
+    indicatorPosition: Float,
+    navController: NavController,
+    onGoogleSignInClick:()-> Unit,
+){
     Box(modifier=modifier.fillMaxSize().background(colorResource(R.color.background)), contentAlignment = Alignment.Center)
     {
         Box(modifier= modifier.background(brush = Brush.verticalGradient(
@@ -112,7 +128,7 @@ fun ScreenWithGradient(modifier: Modifier, colorStops:List<Color>, currentIndex:
 
             WelcomeBundle(modifier=modifier, currentIndex, indicatorPosition)
 
-            GoogleSignInButton(modifier=modifier.fillMaxWidth().padding(4.dp))
+            GoogleSignInButton(modifier=modifier.fillMaxWidth().padding(4.dp), navController, onGoogleSignInClick)
         }
     }
 }
@@ -223,12 +239,14 @@ fun SliderBar(indicatorPosition: Float){
 }
 
 @Composable
-fun GoogleSignInButton(modifier: Modifier){
+fun GoogleSignInButton(
+    modifier: Modifier,
+    navController: NavController,
+    onGoogleSignInClick: () -> Unit
+){
     val context = LocalContext.current
     Button(onClick = {
-        val intent = Intent(context, HomeScreenActivity::class.java)
-        context.startActivity(intent)
-
+            onGoogleSignInClick()
     },
         modifier=modifier.fillMaxWidth(),
         colors = ButtonDefaults.buttonColors(containerColor = colorResource(R.color.googleloginbuttoncolor), contentColor = Color.Black),
