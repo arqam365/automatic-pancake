@@ -1,4 +1,4 @@
-package com.example.surakshakavachui
+package com.nextlevelprogrammers.surakshakawach
 
 import android.os.Build
 import android.os.Bundle
@@ -20,14 +20,15 @@ import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
-import com.example.surakshakavachui.ui.theme.SurakshaKavachUITheme
-import com.example.surakshakavachui.uidesign.GetStartedLogin
-import com.example.surakshakavachui.uidesign.MainScreen
+
 import com.google.android.libraries.identity.googleid.GetGoogleIdOption
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential.Companion.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
+import com.nextlevelprogrammers.surakshakawach.ui.theme.SurakshaKavachUITheme
+import com.nextlevelprogrammers.surakshakawach.uidesign.GetStartedLogin
+import com.nextlevelprogrammers.surakshakawach.uidesign.MainScreen
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 

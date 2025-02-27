@@ -1,4 +1,4 @@
-package com.example.surakshakavachui.uidesign
+package com.nextlevelprogrammers.surakshakawach.uidesign
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -26,7 +26,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
-import com.example.surakshakavachui.R
+import com.nextlevelprogrammers.surakshakawach.R
 
 @Composable
 fun MainScreen(

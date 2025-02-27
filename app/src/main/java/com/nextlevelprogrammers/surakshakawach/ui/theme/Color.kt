@@ -1,4 +1,4 @@
-package com.example.surakshakavachui.ui.theme
+package com.nextlevelprogrammers.surakshakawach.ui.theme
 
 import androidx.compose.ui.graphics.Color
 

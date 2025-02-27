@@ -1,4 +1,4 @@
-package com.example.surakshakavachui.ViewModels
+package com.nextlevelprogrammers.surakshakawach.ViewModels
 
 import androidx.lifecycle.ViewModel
 

@@ -1,4 +1,4 @@
-package com.example.surakshakavachui.uidesign
+package com.nextlevelprogrammers.surakshakawach.uidesign
 
 import android.os.Build
 import androidx.annotation.RequiresApi
@@ -50,7 +50,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
-import com.example.surakshakavachui.R
+import com.nextlevelprogrammers.surakshakawach.R
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 

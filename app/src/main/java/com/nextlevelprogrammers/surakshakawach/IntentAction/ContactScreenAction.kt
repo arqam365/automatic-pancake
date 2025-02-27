@@ -1,6 +1,6 @@
-package com.example.surakshakavachui.IntentAction
+package com.nextlevelprogrammers.surakshakawach.IntentAction
 
-import com.example.surakshakavachui.uidesign.ContactInfo
+import com.nextlevelprogrammers.surakshakawach.uidesign.ContactInfo
 
 
 sealed interface ContactScreenAction {

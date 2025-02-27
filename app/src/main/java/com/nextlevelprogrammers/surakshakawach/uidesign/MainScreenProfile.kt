@@ -1,4 +1,4 @@
-package com.example.surakshakavachui.uidesign
+package com.nextlevelprogrammers.surakshakawach.uidesign
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -28,10 +28,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.example.surakshakavachui.MainActivity.UserData
-import com.example.surakshakavachui.R
-import com.example.surakshakavachui.ui.theme.SurakshaKavachUITheme
 import com.google.firebase.auth.FirebaseAuth
+import com.nextlevelprogrammers.surakshakawach.MainActivity.UserData
+import com.nextlevelprogrammers.surakshakawach.R
+import com.nextlevelprogrammers.surakshakawach.ui.theme.SurakshaKavachUITheme
 
 @Composable
 fun MainScreenProfile(modifier: Modifier = Modifier, onSignOutClick: () -> Unit){

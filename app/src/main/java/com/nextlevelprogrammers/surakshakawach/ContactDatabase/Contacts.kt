@@ -1,4 +1,4 @@
-package com.example.surakshakavachui.ContactDatabase
+package com.nextlevelprogrammers.surakshakawach.ContactDatabase
 
 import androidx.room.Dao
 import androidx.room.Delete

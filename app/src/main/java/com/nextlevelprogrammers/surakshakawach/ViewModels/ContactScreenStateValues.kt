@@ -1,6 +1,6 @@
-package com.example.surakshakavachui.ViewModels
+package com.nextlevelprogrammers.surakshakawach.ViewModels
 
-import com.example.surakshakavachui.uidesign.ContactInfo
+import com.nextlevelprogrammers.surakshakawach.uidesign.ContactInfo
 
 data class ContactScreenStateValues(
     var showAddDialog: Boolean =false,

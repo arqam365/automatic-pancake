@@ -1,7 +1,7 @@
-package com.example.surakshakavachui.ViewModels
+package com.nextlevelprogrammers.surakshakawach.ViewModels
 
 import androidx.lifecycle.ViewModel
-import com.example.surakshakavachui.IntentAction.ContactScreenAction
+import com.nextlevelprogrammers.surakshakawach.IntentAction.ContactScreenAction
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update

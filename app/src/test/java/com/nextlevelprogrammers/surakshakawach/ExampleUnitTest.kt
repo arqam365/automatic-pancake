@@ -1,4 +1,4 @@
-package com.example.surakshakavachui
+package com.nextlevelprogrammers.surakshakawach
 
 import org.junit.Test
 

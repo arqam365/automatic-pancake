@@ -1,4 +1,4 @@
-package com.example.surakshakavachui.uidesign
+package com.nextlevelprogrammers.surakshakawach.uidesign
 
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
@@ -52,9 +52,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
-import com.example.surakshakavachui.IntentAction.ContactScreenAction
-import com.example.surakshakavachui.ViewModels.ContactScreenStateValues
-import com.example.surakshakavachui.ViewModels.ContactScreenViewModel
+import com.nextlevelprogrammers.surakshakawach.IntentAction.ContactScreenAction
+import com.nextlevelprogrammers.surakshakawach.ViewModels.ContactScreenStateValues
+import com.nextlevelprogrammers.surakshakawach.ViewModels.ContactScreenViewModel
 import kotlinx.coroutines.delay
 
 @Composable
