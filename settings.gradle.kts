@@ -21,6 +21,6 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Suraksha Kavach UI"
+rootProject.name = "Suraksha Kawach"
 include(":app")
  

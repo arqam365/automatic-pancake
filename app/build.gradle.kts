@@ -4,14 +4,15 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.google.gms.google.services) // ✅ Google Services Plugin
     id("com.google.devtools.ksp") // ✅ Kotlin Symbol Processing
+    kotlin("plugin.serialization") version "1.9.0"
 }
 
 android {
-    namespace = "com.example.surakshakavachui"
+    namespace = "com.nextlevelprogrammers.surakshakawach"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.example.surakshakavachui"
+        applicationId = "com.nextlevelprogrammers.surakshakawach"
         minSdk = 24
         targetSdk = 35
         versionCode = 1
@@ -98,6 +99,19 @@ dependencies {
 
     // ✅ Nafis Bottom Navigation (Ensure it's correct)
     implementation("com.github.Foysalofficial:NafisBottomNav:5.0")
+
+    implementation("io.ktor:ktor-client-core:2.3.5")
+    implementation("io.ktor:ktor-client-cio:2.3.5") // Use CIO engine for Android networking
+
+    // ✅ Ktor JSON Serialization & Content Negotiation
+    implementation("io.ktor:ktor-client-content-negotiation:2.3.5")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.5")
+
+    // ✅ Ktor Logging for Debugging
+    implementation("io.ktor:ktor-client-logging:2.3.5")
+
+    // ✅ KotlinX Serialization (Ensure it's added)
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
 
 
 }
