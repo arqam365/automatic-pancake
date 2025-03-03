@@ -1,7 +1,6 @@
 package com.nextlevelprogrammers.surakshakawach.model
 
 import com.nextlevelprogrammers.surakshakawach.data.local.ContactEntity
-import com.nextlevelprogrammers.surakshakawach.data.remote.ContactResponse
 import com.nextlevelprogrammers.surakshakawach.uidesign.ContactInfo
 
 // Convert Room Database Entity to ContactInfo

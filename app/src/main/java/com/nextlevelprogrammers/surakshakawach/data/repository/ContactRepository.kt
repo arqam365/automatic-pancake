@@ -49,7 +49,6 @@ class ContactRepository(
 
     suspend fun addContactToApi(userId: String, contact: ContactInfo) {
         withContext(Dispatchers.IO) {
-            apiService.addContact(userId, contact.toContactRequest())
             try {
                 val response = apiService.addContact(userId, contact.toContactRequest())
                 println("✅ API Response: $response") // Debug Log

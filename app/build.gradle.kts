@@ -42,6 +42,11 @@ android {
         viewBinding = true
         dataBinding = true
     }
+    packagingOptions {
+        resources {
+            excludes += "META-INF/DEPENDENCIES"
+        }
+    }
 }
 
 dependencies {
@@ -59,6 +64,7 @@ dependencies {
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore.ktx)
+    implementation(libs.firebase.messaging.ktx)
     implementation(libs.play.services.auth) // ✅ Fixes missing CredentialsOptions.Builder
 
     // ✅ Jetpack Navigation
@@ -110,8 +116,13 @@ dependencies {
     // ✅ Ktor Logging for Debugging
     implementation("io.ktor:ktor-client-logging:2.3.5")
 
-    // ✅ KotlinX Serialization (Ensure it's added)
-    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
+    implementation("com.google.apis:google-api-services-people:v1-rev20220531-2.0.0")
 
+    implementation("com.google.android.gms:play-services-auth:20.7.0")
+
+    implementation("com.google.auth:google-auth-library-oauth2-http:1.18.0")
+
+    implementation("com.google.api-client:google-api-client:2.2.0")
+    implementation("com.google.http-client:google-http-client-gson:1.42.3")
 
 }
