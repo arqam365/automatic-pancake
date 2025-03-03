@@ -122,6 +122,7 @@ fun ContactScreen(modifier: Modifier, state:ContactScreenStateValues,onAction:(C
 @Composable
 fun AddContact(showAddDialog:Boolean, onAction: (ContactScreenAction) -> Unit)
 {
+
     var name by remember{ mutableStateOf("")}
     var number by remember{ mutableStateOf("")}
     var email by remember{ mutableStateOf("")}
