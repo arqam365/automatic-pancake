@@ -1,12 +1,10 @@
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.android)
-    id("com.google.gms.google-services")
-    id("com.google.firebase.crashlytics")
-    id("com.google.firebase.firebase-perf")
-    id("org.jetbrains.kotlin.plugin.serialization") version "2.0.20"
-    id ("com.google.devtools.ksp") version "2.1.10-1.0.29"
     alias(libs.plugins.kotlin.compose)
+    alias(libs.plugins.google.gms.google.services) // ✅ Google Services Plugin
+    id("com.google.devtools.ksp") // ✅ Kotlin Symbol Processing
+    kotlin("plugin.serialization") version "1.9.0"
 }
 
 android {
@@ -15,53 +13,43 @@ android {
 
     defaultConfig {
         applicationId = "com.nextlevelprogrammers.surakshakawach"
-        minSdk = 27
+        minSdk = 24
         targetSdk = 35
-        versionCode = 18
-        versionName = "1.4.5.6"
-
+        versionCode = 1
+        versionName = "1.0"
+        multiDexEnabled = true
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-        vectorDrawables {
-            useSupportLibrary = true
-        }
-
-        ndk {
-            debugSymbolLevel = "FULL" // This will generate full debug symbols
-        }
     }
 
     buildTypes {
         release {
-            isMinifyEnabled = true
+            isMinifyEnabled = false
             proguardFiles(
                 getDefaultProguardFile("proguard-android-optimize.txt"),
                 "proguard-rules.pro"
             )
-            signingConfig = signingConfigs.getByName("debug")
         }
     }
     compileOptions {
-        sourceCompatibility = JavaVersion.VERSION_1_8
-        targetCompatibility = JavaVersion.VERSION_1_8
+        sourceCompatibility = JavaVersion.VERSION_11
+        targetCompatibility = JavaVersion.VERSION_11
     }
     kotlinOptions {
-        jvmTarget = "1.8"
+        jvmTarget = "11"
     }
     buildFeatures {
         compose = true
+        viewBinding = true
+        dataBinding = true
     }
-    composeOptions {
-        kotlinCompilerExtensionVersion = "1.5.1"
-    }
-    packaging {
+    packagingOptions {
         resources {
-            excludes += "/META-INF/{AL2.0,LGPL2.1}"
+            excludes += "META-INF/DEPENDENCIES"
         }
     }
 }
 
 dependencies {
-
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -70,55 +58,71 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
-    implementation(libs.androidx.appcompat)
-    implementation(libs.play.services.location)
-    implementation(libs.androidx.navigation.runtime.ktx)
-    implementation(libs.androidx.navigation.compose)
-    implementation(libs.androidx.camera.core)
-    implementation(libs.androidx.camera.lifecycle)
-    implementation(libs.firebase.storage.ktx)
-    implementation (libs.androidx.camera.extensions)
-    implementation (libs.androidx.camera.camera2)
-    implementation(libs.androidx.camera.view)
-    testImplementation(libs.junit)
-    androidTestImplementation(libs.androidx.junit)
-    androidTestImplementation(libs.androidx.espresso.core)
-    androidTestImplementation(platform(libs.androidx.compose.bom))
-    androidTestImplementation(libs.androidx.ui.test.junit4)
-    debugImplementation(libs.androidx.ui.tooling)
-    debugImplementation(libs.androidx.ui.test.manifest)
-    implementation (libs.firebase.auth.ktx)
-    implementation (libs.play.services.auth)
-    implementation (libs.accompanist.insets)
-    implementation (platform(libs.firebase.bom))
-    implementation (libs.google.firebase.auth.ktx)
-    implementation(libs.firebase.analytics)
-    implementation(libs.firebase.crashlytics)
-    implementation (libs.play.services.auth)
-    implementation (libs.play.services.base)
-    implementation(libs.firebase.perf)
-    implementation (libs.play.services.maps)
-    implementation (libs.maps.compose)
-    implementation (libs.accompanist.insets.v0263beta)
-    implementation(libs.ktor.client.core)
-    implementation(libs.ktor.client.cio)
-    implementation(libs.ktor.client.serialization)
-    implementation(libs.ktor.client.content.negotiation)
-    implementation(libs.ktor.serialization.kotlinx.json)
-    implementation(libs.kotlinx.serialization.json)
-    implementation (libs.android.maps.utils)
-    implementation (libs.firebase.storage)
-    implementation (libs.integrity)
-    implementation("io.coil-kt:coil-compose:2.7.0")
-    implementation ("androidx.compose.material3:material3:1.3.1")
-    implementation ("ai.picovoice:porcupine-android:3.0.1")
-    implementation ("ai.picovoice:rhino-android:3.0.1")
-    implementation ("androidx.room:room-runtime:2.6.1")
-    ksp ("androidx.room:room-compiler:2.6.1")
-    implementation ("androidx.room:room-ktx:2.6.1")
-    implementation ("androidx.work:work-runtime-ktx:2.10.0")
-    implementation ("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.10.1")
-    implementation ("androidx.media3:media3-exoplayer:1.5.1")
-    implementation ("androidx.media3:media3-ui:1.5.1")
-    implementation("com.google.accompanist:accompanist-swiperefresh:0.36.0")
+    implementation(libs.androidx.ui.viewbinding)
+
+    // ✅ Firebase (Managed via BOM)
+    implementation(platform(libs.firebase.bom))
+    implementation(libs.firebase.auth)
+    implementation(libs.firebase.firestore.ktx)
+    implementation(libs.firebase.messaging.ktx)
+    implementation(libs.play.services.auth) // ✅ Fixes missing CredentialsOptions.Builder
+
+    // ✅ Jetpack Navigation
+    implementation("androidx.navigation:navigation-compose:2.8.7")
+    implementation("androidx.navigation:navigation-fragment:2.8.7")
+    implementation("androidx.navigation:navigation-ui:2.8.7")
+    implementation(libs.androidx.credentials)
+    implementation(libs.androidx.credentials.play.services.auth)
+    implementation(libs.googleid)
+    implementation(libs.material)
+    implementation(libs.androidx.monitor)
+    implementation(libs.androidx.junit.ktx)
+    testImplementation(libs.junit.jupiter)
+    testImplementation(libs.testng)
+    androidTestImplementation(libs.junit.junit)
+    androidTestImplementation(libs.testng)
+
+    // ✅ Lifecycle ViewModel & LiveData
+    val lifecycle_version = "2.8.7"
+    implementation("androidx.lifecycle:lifecycle-viewmodel-ktx:$lifecycle_version")
+    implementation("androidx.lifecycle:lifecycle-viewmodel-compose:$lifecycle_version")
+    implementation("androidx.lifecycle:lifecycle-livedata-ktx:$lifecycle_version")
+    implementation("androidx.lifecycle:lifecycle-runtime-compose:$lifecycle_version")
+
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.7.3")
+
+    // ✅ Material Design Icons & Animations
+    implementation("androidx.compose.material3:material3:1.3.1")
+    implementation("androidx.compose.material3:material3-window-size-class:1.3.1")
+    implementation("androidx.compose.material3:material3-adaptive-navigation-suite:1.4.0-alpha08")
+    implementation("androidx.compose.material:material-icons-core:1.6.7")
+    implementation("androidx.compose.material:material-icons-extended:1.6.7")
+
+    // ✅ Room Database (with KSP for Code Generation)
+    implementation(libs.androidx.room.runtime)
+    ksp(libs.androidx.room.compiler)
+    implementation(libs.androidx.room.ktx)
+
+    // ✅ Nafis Bottom Navigation (Ensure it's correct)
+    implementation("com.github.Foysalofficial:NafisBottomNav:5.0")
+
+    implementation("io.ktor:ktor-client-core:2.3.5")
+    implementation("io.ktor:ktor-client-cio:2.3.5") // Use CIO engine for Android networking
+
+    // ✅ Ktor JSON Serialization & Content Negotiation
+    implementation("io.ktor:ktor-client-content-negotiation:2.3.5")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.5")
+
+    // ✅ Ktor Logging for Debugging
+    implementation("io.ktor:ktor-client-logging:2.3.5")
+
+    implementation("com.google.apis:google-api-services-people:v1-rev20220531-2.0.0")
+
+    implementation("com.google.android.gms:play-services-auth:20.7.0")
+
+    implementation("com.google.auth:google-auth-library-oauth2-http:1.18.0")
+
+    implementation("com.google.api-client:google-api-client:2.2.0")
+    implementation("com.google.http-client:google-http-client-gson:1.42.3")
+
 }
