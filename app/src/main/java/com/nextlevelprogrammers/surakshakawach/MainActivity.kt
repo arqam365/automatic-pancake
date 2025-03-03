@@ -140,13 +140,15 @@ class MainActivity : ComponentActivity() {
         val firebaseCredential = GoogleAuthProvider.getCredential(idToken, null)
         auth.signInWithCredential(firebaseCredential)
             .addOnCompleteListener { task ->
-                if (task.isSuccessful) {
+                if (task.isSuccessful)
+                {
                     val user = auth.currentUser
                     val firebaseUid = user?.uid ?: return@addOnCompleteListener
                     Log.d(TAG, "✅ Firebase UID: $firebaseUid")
 
                     // ✅ Fetch DOB from Google People API
-                    lifecycleScope.launch(Dispatchers.IO) {
+                    lifecycleScope.launch(Dispatchers.IO)
+                    {
                         val dateOfBirth = fetchUserDobFromGoogle(idToken) ?: "unknown"
                         Log.d(TAG, "🎂 User DOB: $dateOfBirth")
 
@@ -158,10 +160,15 @@ class MainActivity : ComponentActivity() {
 
                                 // ✅ Send Data to Backend
                                 sendAuthDataToBackend(firebaseUid, dateOfBirth, fcmToken, navController)
+
                             } else {
                                 Log.e(TAG, "❌ Failed to get FCM Token: ${tokenTask.exception?.message}")
                             }
                         }
+                    }
+                    // Here we navigate to the Main Screen----
+                    navController.navigate("MainScreen"){
+                        popUpTo("GetStarted"){inclusive=true} //This is how we remove the previous graph darling.
                     }
                 } else {
                     Log.e(TAG, "❌ Firebase authentication failed: ${task.exception?.localizedMessage}")
