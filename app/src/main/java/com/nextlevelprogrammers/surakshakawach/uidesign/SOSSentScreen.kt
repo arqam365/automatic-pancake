@@ -9,6 +9,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import com.nextlevelprogrammers.surakshakawach.data.remote.ApiService
+import com.nextlevelprogrammers.surakshakawach.emergency_videos.VideoRecorder
 import com.nextlevelprogrammers.surakshakawach.model.TicketResponse
 import com.nextlevelprogrammers.surakshakawach.utils.LocationUtils
 import io.ktor.client.call.body
@@ -24,10 +25,30 @@ import kotlinx.serialization.json.jsonPrimitive
 fun SOSGranted(context: Context, userId: String) {
     val locationUtils = remember { LocationUtils(context) }
     val apiService = remember { ApiService() }
+    val videoRecorder = remember { VideoRecorder(context) }
     var locationText by remember { mutableStateOf("Fetching location...") }
     var ticketId by remember { mutableStateOf<String?>(null) }
     var ticketStatus by remember { mutableStateOf("Pending") }
     val coroutineScope = rememberCoroutineScope()
+
+    LaunchedEffect(Unit) {
+        videoRecorder.initializeCamera()
+
+        videoRecorder.startContinuousRecording(userId) { videoUrl, bucketUrl ->
+            Log.d("SOSGranted", "✅ Video Uploaded, Sending to API")
+
+            ticketId?.let { ticket ->
+                coroutineScope.launch {
+                    val response = apiService.uploadVideo(userId, ticket, videoUrl, bucketUrl)
+                    if (response != null) {
+                        Log.d("SOSGranted", "✅ Video Sent to API")
+                    } else {
+                        Log.e("SOSGranted", "❌ Failed to Send Video to API")
+                    }
+                }
+            }
+        }
+    }
 
     LaunchedEffect(Unit) {
         locationUtils.getLastKnownLocation { latitude, longitude ->

@@ -66,6 +66,7 @@ dependencies {
     implementation(libs.firebase.firestore.ktx)
     implementation(libs.firebase.messaging.ktx)
     implementation(libs.play.services.auth) // ✅ Fixes missing CredentialsOptions.Builder
+    implementation("com.google.firebase:firebase-storage-ktx:20.2.1")
 
     // ✅ Jetpack Navigation
     implementation(libs.androidx.navigation.compose)
@@ -130,5 +131,15 @@ dependencies {
     //Coil for image loading
     implementation("io.coil-kt.coil3:coil-compose:3.1.0")
     implementation("io.coil-kt.coil3:coil-network-okhttp:3.1.0")
+
+    //Map dependencies
+    implementation("com.google.android.gms:play-services-maps:19.1.0")
+    implementation("com.google.maps.android:maps-compose:6.4.3")
+
+    //CameraX dependencies
+    implementation("androidx.camera:camera-core:1.4.1")
+    implementation("androidx.camera:camera-camera2:1.4.1")
+    implementation("androidx.camera:camera-lifecycle:1.4.1")
+    implementation("androidx.camera:camera-video:1.4.1")
 
 }
