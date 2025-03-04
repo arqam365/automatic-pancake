@@ -36,8 +36,10 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
 import com.nextlevelprogrammers.surakshakawach.deviceadmin.MyDeviceAdminReceiver
 import com.nextlevelprogrammers.surakshakawach.ui.theme.SurakshaKavachUITheme
+import com.nextlevelprogrammers.surakshakawach.uidesign.CountdownWindow
 import com.nextlevelprogrammers.surakshakawach.uidesign.GetStartedLogin
 import com.nextlevelprogrammers.surakshakawach.uidesign.MainScreen
+import com.nextlevelprogrammers.surakshakawach.uidesign.SOSGranted
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 
@@ -91,6 +93,12 @@ class MainActivity : ComponentActivity() {
                                 navController = navController,
                                 onSignOutClick={signOut(navController)}
                             )
+                        }
+                        composable("CountScreen"){
+                            CountdownWindow(navController=navController)
+                        }
+                        composable("SOSGranted"){
+                            SOSGranted()
                         }
                     }
                 }

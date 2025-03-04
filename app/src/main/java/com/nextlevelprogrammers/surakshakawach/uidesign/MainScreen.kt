@@ -82,7 +82,7 @@ fun MainScreen(
     ) { innerPadding ->
         Box(modifier = Modifier.padding(innerPadding)) {
             when (selectedIndex) {
-                0 -> MainScreenHome(Modifier)
+                0 -> MainScreenHome(Modifier, navController)
                 1 -> MainScreenContactRoot(Modifier)
                 2 -> MainScreenProfile(onSignOutClick=onSignOutClick)
             }

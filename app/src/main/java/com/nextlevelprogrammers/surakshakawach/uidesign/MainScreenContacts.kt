@@ -318,3 +318,8 @@ fun DeleteBackground(swipeDismissState: SwipeToDismissBoxState) {
     }
 }
 
+data class ContactInfo(
+    val name:String,
+    val number: String,
+    val email:String
+)
