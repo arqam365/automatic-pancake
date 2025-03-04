@@ -4,6 +4,7 @@ plugins {
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.google.gms.google.services) // ✅ Google Services Plugin
     id("com.google.devtools.ksp") // ✅ Kotlin Symbol Processing
+    kotlin("plugin.serialization") version "1.9.0"
 }
 
 android {
@@ -41,6 +42,11 @@ android {
         viewBinding = true
         dataBinding = true
     }
+    packagingOptions {
+        resources {
+            excludes += "META-INF/DEPENDENCIES"
+        }
+    }
 }
 
 dependencies {
@@ -58,6 +64,7 @@ dependencies {
     implementation(platform(libs.firebase.bom))
     implementation(libs.firebase.auth)
     implementation(libs.firebase.firestore.ktx)
+    implementation(libs.firebase.messaging.ktx)
     implementation(libs.play.services.auth) // ✅ Fixes missing CredentialsOptions.Builder
 
     // ✅ Jetpack Navigation
@@ -99,5 +106,23 @@ dependencies {
     // ✅ Nafis Bottom Navigation (Ensure it's correct)
     implementation("com.github.Foysalofficial:NafisBottomNav:5.0")
 
+    implementation("io.ktor:ktor-client-core:2.3.5")
+    implementation("io.ktor:ktor-client-cio:2.3.5") // Use CIO engine for Android networking
+
+    // ✅ Ktor JSON Serialization & Content Negotiation
+    implementation("io.ktor:ktor-client-content-negotiation:2.3.5")
+    implementation("io.ktor:ktor-serialization-kotlinx-json:2.3.5")
+
+    // ✅ Ktor Logging for Debugging
+    implementation("io.ktor:ktor-client-logging:2.3.5")
+
+    implementation("com.google.apis:google-api-services-people:v1-rev20220531-2.0.0")
+
+    implementation("com.google.android.gms:play-services-auth:20.7.0")
+
+    implementation("com.google.auth:google-auth-library-oauth2-http:1.18.0")
+
+    implementation("com.google.api-client:google-api-client:2.2.0")
+    implementation("com.google.http-client:google-http-client-gson:1.42.3")
 
 }

@@ -28,10 +28,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.google.firebase.auth.FirebaseAuth
 import com.nextlevelprogrammers.surakshakawach.MainActivity.UserData
 import com.nextlevelprogrammers.surakshakawach.R
 import com.nextlevelprogrammers.surakshakawach.ui.theme.SurakshaKavachUITheme
+import com.google.firebase.auth.FirebaseAuth
 
 @Composable
 fun MainScreenProfile(modifier: Modifier = Modifier, onSignOutClick: () -> Unit){

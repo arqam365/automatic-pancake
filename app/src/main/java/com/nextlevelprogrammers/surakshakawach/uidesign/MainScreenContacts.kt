@@ -1,4 +1,4 @@
-package com.nextlevelprogrammers.surakshakawach.uidesign
+package com.example.surakshakavachui.uidesign
 
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
@@ -9,22 +9,24 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.lazy.LazyColumn
-import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
@@ -55,13 +57,41 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import com.nextlevelprogrammers.surakshakawach.IntentAction.ContactScreenAction
 import com.nextlevelprogrammers.surakshakawach.ViewModels.ContactScreenStateValues
 import com.nextlevelprogrammers.surakshakawach.ViewModels.ContactScreenViewModel
+import com.nextlevelprogrammers.surakshakawach.ViewModels.ContactScreenViewModelFactory
+import com.nextlevelprogrammers.surakshakawach.data.local.AppDatabase
+import com.nextlevelprogrammers.surakshakawach.data.remote.ApiService
+import com.nextlevelprogrammers.surakshakawach.repository.ContactRepository
+import io.ktor.client.HttpClient
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
+import io.ktor.serialization.kotlinx.json.json
+import com.nextlevelprogrammers.surakshakawach.IntentAction.ContactScreenAction
+import com.nextlevelprogrammers.surakshakawach.ViewModels.ContactScreenStateValues
+import com.nextlevelprogrammers.surakshakawach.ViewModels.ContactScreenViewModel
 import kotlinx.coroutines.delay
 
 @Composable
-fun MainScreenContactRoot(modifier: Modifier){
-    val viewModel: ContactScreenViewModel= viewModel()
+fun MainScreenContactRoot(modifier: Modifier) {
+    val context = LocalContext.current
+
+    val database = remember { AppDatabase.getDatabase(context) }
+    val contactDao = remember { database.contactDao() }
+    val apiService = remember {
+        ApiService(
+            HttpClient {
+                install(ContentNegotiation) {
+                    json()
+                }
+            }
+        )
+    }
+
+    val contactRepository = remember { ContactRepository(apiService, contactDao) }
+    val viewModel: ContactScreenViewModel = viewModel(
+        factory = ContactScreenViewModelFactory(contactRepository)
+    )
+
     val state by viewModel.state.collectAsStateWithLifecycle()
-    ContactScreen(modifier=modifier,state=state,onAction= viewModel::onAction)
+    ContactScreen(modifier = modifier, state = state, onAction = viewModel::onAction)
 }
 
 @Composable
@@ -83,19 +113,12 @@ fun ContactScreen(modifier: Modifier, state:ContactScreenStateValues,onAction:(C
                     fontWeight = FontWeight.Bold,
                     modifier = modifier.padding(bottom = 8.dp, start = 20.dp)
                 )
-                LazyColumn(
+                Column(
                     modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.spacedBy(10.dp),
-                    contentPadding = PaddingValues(16.dp)
+                    verticalArrangement = Arrangement.Center,
+                    horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    items(state.contactList, key = { it.number }) { contact ->
-                        SwipeContainer(
-                            item = contact,
-                            onAction=onAction
-                        ) {
-                            ContactCard(contact = contact)
-                        }
-                    }
+                    Text(text = "Testing Contact Addition to Database")
                 }
             }
 
@@ -119,6 +142,7 @@ fun ContactScreen(modifier: Modifier, state:ContactScreenStateValues,onAction:(C
 
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddContact(showAddDialog:Boolean, onAction: (ContactScreenAction) -> Unit)
 {
@@ -128,55 +152,109 @@ fun AddContact(showAddDialog:Boolean, onAction: (ContactScreenAction) -> Unit)
     var email by remember{ mutableStateOf("")}
     val context= LocalContext.current
     if(showAddDialog){
+fun AddContact(showAddDialog: Boolean, onAction: (ContactScreenAction) -> Unit) {
+    var name by remember { mutableStateOf("") }
+    var number by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("") }
+    var relationship by remember { mutableStateOf("Parent") } // ✅ Default value
+    var expanded by remember { mutableStateOf(false) }
+
+    val relationshipOptions = listOf("Parent", "Spouse", "Child", "Friend", "Other")
+    val context = LocalContext.current
+
+    if (showAddDialog) {
         AlertDialog(
             onDismissRequest = { onAction(ContactScreenAction.OnCancelSaveContact) },
             title = { Text("Add Contact") },
             text = {
-                    Column(modifier = Modifier.padding(8.dp)) {
+                Column(modifier = Modifier.padding(8.dp)) {
+                    OutlinedTextField(
+                        value = name,
+                        onValueChange = { name = it },
+                        label = { Text("Name") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    OutlinedTextField(
+                        value = number,
+                        onValueChange = { number = it },
+                        label = { Text("Number") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    OutlinedTextField(
+                        value = email,
+                        onValueChange = { email = it },
+                        label = { Text("Email") },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    // ✅ Themed Relationship Dropdown (Matches OutlinedTextField)
+                    ExposedDropdownMenuBox(
+                        expanded = expanded,
+                        onExpandedChange = { expanded = it }
+                    ) {
                         OutlinedTextField(
-                            value = name,
-                            onValueChange = { name = it },
-                            label = { Text("Contact Name") }
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        OutlinedTextField(
-                            value = number,
-                            onValueChange = { number = it },
-                            label = { Text("Contact Number") }
-                        )
-                        Spacer(modifier = Modifier.height(8.dp))
-                        OutlinedTextField(
-                            value = email,
-                            onValueChange = { email=it},
-                            label = {
-                                Text("Contact Email")
+                            value = relationship,
+                            onValueChange = {},
+                            readOnly = true,
+                            label = { Text("Relationship") },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .menuAnchor(), // ✅ This is required for dropdown to expand
+                            trailingIcon = {
+                                Icon(
+                                    imageVector = Icons.Default.ArrowDropDown,
+                                    contentDescription = "Dropdown Arrow"
+                                )
                             }
                         )
+                        DropdownMenu(
+                            expanded = expanded,
+                            onDismissRequest = { expanded = false },
+                            modifier = Modifier.fillMaxWidth()
+                        ) {
+                            relationshipOptions.forEach { option ->
+                                DropdownMenuItem(
+                                    text = { Text(option) },
+                                    onClick = {
+                                        relationship = option // ✅ Set selected value
+                                        expanded = false // ✅ Close dropdown
+                                    }
+                                )
+                            }
+                        }
+                    }
                 }
             },
             confirmButton = {
-                Button(onClick = {
-                    if(number==""|| number.length!=10 || name==""){
-                        Toast.makeText(context,"Invalid Contact", Toast.LENGTH_SHORT).show()
-                    }else {
-                        onAction(ContactScreenAction.OnClickSaveContact(ContactInfo(name, number,email)))
+                Button(
+                    onClick = {
+                        if (number.length != 12 || name.isBlank()) {
+                            Toast.makeText(context, "Invalid Contact", Toast.LENGTH_SHORT).show()
+                        } else {
+                            onAction(
+                                ContactScreenAction.OnClickSaveContact(
+                                    ContactInfo(name, number, email, relationship)
+                                )
+                            )
+                        }
                     }
-                }
                 ) {
                     Text("Save")
                 }
             },
             dismissButton = {
-                TextButton(
-                    onClick = { onAction(ContactScreenAction.OnCancelSaveContact) },
-                ){
+                TextButton(onClick = { onAction(ContactScreenAction.OnCancelSaveContact) }) {
                     Text("Cancel")
                 }
             }
         )
     }
 }
-
 
 @Composable
 fun ContactCard(modifier: Modifier = Modifier, contact: ContactInfo) {
@@ -188,7 +266,7 @@ fun ContactCard(modifier: Modifier = Modifier, contact: ContactInfo) {
         .clip(RoundedCornerShape(4.dp))
         ) {
             Text(text = contact.name, modifier.padding(start = 6.dp))
-            Text(text = contact.number, modifier.padding(start = 6.dp))
+            Text(text = contact.phone_number, modifier.padding(start = 6.dp))
             Text(text = contact.email, modifier.padding(start = 6.dp), color = MaterialTheme.colorScheme.primary)
         }
     }
@@ -243,7 +321,7 @@ fun EditContactDialog(
     onAction: (ContactScreenAction) -> Unit
 ) {
     var newName by remember { mutableStateOf(contact.name) }
-    var newNumber by remember { mutableStateOf(contact.number) }
+    var newNumber by remember { mutableStateOf(contact.phone_number) }
     var newEmail by remember{ mutableStateOf(contact.email)}
     val context= LocalContext.current
     AlertDialog(
@@ -275,7 +353,7 @@ fun EditContactDialog(
                 if(newNumber==""|| newNumber.length!=10 || newName==""){
                     Toast.makeText(context,"Invalid Contact", Toast.LENGTH_SHORT).show()
                 }else {
-                    onAction(ContactScreenAction.OnClickEditSave(contact, newName, newNumber, newEmail))
+                    onAction(ContactScreenAction.OnClickEditSave(contact, newName, newNumber, newEmail, newRelation = String()))
                 }
             }) {
                 Text("Save")
@@ -318,8 +396,3 @@ fun DeleteBackground(swipeDismissState: SwipeToDismissBoxState) {
     }
 }
 
-data class ContactInfo(
-    val name:String,
-    val number: String,
-    val email:String
-)
