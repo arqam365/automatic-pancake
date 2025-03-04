@@ -1,6 +1,5 @@
 package com.nextlevelprogrammers.surakshakawach.uidesign
 
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -10,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Male
@@ -22,14 +22,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import coil3.compose.AsyncImage
 import com.google.firebase.auth.FirebaseAuth
 import com.nextlevelprogrammers.surakshakawach.MainActivity
-import com.nextlevelprogrammers.surakshakawach.R
 
 @Composable
 fun MainScreenProfile(modifier: Modifier = Modifier, onSignOutClick: () -> Unit){
@@ -63,10 +62,10 @@ fun ProfileCard(
             verticalArrangement = Arrangement.spacedBy(28.dp),
             modifier = modifier.padding(20.dp, 32.dp)
         ) {
-            Image(
-                modifier = modifier.size(120.dp),
+            AsyncImage(
+                modifier = modifier.size(120.dp).clip(CircleShape),
                 contentDescription = "UserProfilePicture",
-                painter = painterResource(R.drawable.sosbutton)
+                model = user?.photoUrl
             )
             Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)){
                 Text(
