@@ -26,13 +26,15 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
+import com.google.firebase.auth.FirebaseAuth
 import com.nextlevelprogrammers.surakshakawach.R
 
 @Composable
 fun MainScreen(
     modifier: Modifier = Modifier,
     navController: NavController,
-    onSignOutClick: () -> Unit
+    onSignOutClick: () -> Unit,
+    auth: FirebaseAuth
 ){
 
     val BottomShadowShape = GenericShape { size, _ ->
@@ -82,7 +84,7 @@ fun MainScreen(
     ) { innerPadding ->
         Box(modifier = Modifier.padding(innerPadding)) {
             when (selectedIndex) {
-                0 -> MainScreenHome(Modifier, navController)
+                0 -> MainScreenHome(Modifier, navController,auth)
                 1 -> MainScreenContactRoot(Modifier)
                 2 -> MainScreenProfile(onSignOutClick=onSignOutClick)
             }

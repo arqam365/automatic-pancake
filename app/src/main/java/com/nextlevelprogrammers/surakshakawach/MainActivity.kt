@@ -68,7 +68,8 @@ class MainActivity : ComponentActivity() {
 
         sharedPreferences = getSharedPreferences("AppPrefs", Context.MODE_PRIVATE)
 
-        deviceAdminLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+        deviceAdminLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult())
+        { result ->
             if (result.resultCode == Activity.RESULT_OK) {
                 Toast.makeText(this, "Device Admin Enabled", Toast.LENGTH_SHORT).show()
             } else {
@@ -101,7 +102,8 @@ class MainActivity : ComponentActivity() {
                             MainScreen(
                                 Modifier.padding(innerPadding),
                                 navController = navController,
-                                onSignOutClick={signOut(navController)}
+                                onSignOutClick={signOut(navController)},
+                                auth=auth
                             )
                         }
                         composable(Routes.COUNTDOWN_SCREEN){
@@ -262,7 +264,7 @@ class MainActivity : ComponentActivity() {
 
     private fun signOut(navController: NavHostController){
         auth.signOut()
-        navController.navigate("GetStarted"){
+        navController.navigate(Routes.GET_STARTED){
             popUpTo("MainScreen"){inclusive=true}
         }
     }

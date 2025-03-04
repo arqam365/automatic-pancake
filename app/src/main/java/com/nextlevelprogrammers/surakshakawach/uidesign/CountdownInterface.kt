@@ -19,6 +19,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
 import com.nextlevelprogrammers.surakshakawach.Routes
@@ -37,9 +38,10 @@ fun CountdownWindow(modifier: Modifier=Modifier, navController: NavHostControlle
     }
     Box(modifier = modifier.fillMaxSize(),
         contentAlignment = Alignment.Center){
-        Column(modifier=modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally) {
+        Column(modifier=modifier.padding(20.dp), horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(12.dp)) {
             Text(
-                text="SOS will granted automatically in $seconds seconds"
+                text="SOS will granted automatically in $seconds seconds",
+                textAlign = TextAlign.Center
             )
             Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                 Button(onClick = {navController.popBackStack()}, modifier=modifier.shadow(elevation = 2.dp)){

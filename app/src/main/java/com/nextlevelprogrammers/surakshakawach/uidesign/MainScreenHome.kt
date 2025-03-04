@@ -27,14 +27,17 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
+import coil3.compose.AsyncImage
+import com.google.firebase.auth.FirebaseAuth
 import com.nextlevelprogrammers.surakshakawach.R
 import com.nextlevelprogrammers.surakshakawach.Routes
 
 @Composable
 
-fun MainScreenHome(modifier: Modifier, navController: NavController) {
-    val user_name = "Sharad"
-    val user_profile_picture = painterResource(R.drawable.sosbutton)
+fun MainScreenHome(modifier: Modifier, navController: NavController, auth: FirebaseAuth) {
+    val user= auth.currentUser
+    val user_name = user?.displayName
+    val user_profile_picture = user?.photoUrl
     Column(
         modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
             .padding(top = 12.dp)
@@ -54,10 +57,10 @@ fun MainScreenHome(modifier: Modifier, navController: NavController) {
                 modifier = modifier.size(44.dp).clip(CircleShape),
                 contentAlignment = Alignment.Center
             ) {
-                Image(
-                    painter = user_profile_picture,
+                AsyncImage(
+                    model = user_profile_picture,
                     contentDescription = "Profile Picture",
-                    modifier = modifier.size(36.dp)
+                    modifier = modifier.size(36.dp).clip(CircleShape)
                 )
             }
         }
