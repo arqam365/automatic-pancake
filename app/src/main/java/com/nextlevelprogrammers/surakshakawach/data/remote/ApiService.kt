@@ -9,6 +9,8 @@ import com.nextlevelprogrammers.surakshakawach.model.ContactRequest
 import com.nextlevelprogrammers.surakshakawach.model.ContactResponse
 import com.nextlevelprogrammers.surakshakawach.model.LocationUpdateRequest
 import com.nextlevelprogrammers.surakshakawach.model.SOSRequest
+import com.nextlevelprogrammers.surakshakawach.model.VideoRequest
+import com.nextlevelprogrammers.surakshakawach.model.VideoResponse
 import io.ktor.client.*
 import io.ktor.client.call.*
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
@@ -18,6 +20,7 @@ import io.ktor.http.*
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 import java.time.Instant
+import java.util.UUID
 
 class ApiService() {
 
@@ -116,6 +119,36 @@ class ApiService() {
         return client.post(url) {
             contentType(ContentType.Application.Json) // ✅ Ensure correct content type
             setBody(requestBody) // ✅ Send the updated location data
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    suspend fun uploadVideo(userId: String, ticketId: String, videoUrl: String, bucketUrl: String): VideoResponse? {
+        return try {
+            val requestBody = VideoRequest(
+                video_id = UUID.randomUUID().toString(),
+                video_url = videoUrl,
+                bucket_url = bucketUrl,
+                created_at = Instant.now().toString()
+            )
+
+            val url = "$BASE_URL/v2/user/$userId/ticket/$ticketId/video"
+
+            val response: HttpResponse = client.post(url) {
+                contentType(ContentType.Application.Json)
+                setBody(requestBody)
+            }
+
+            if (response.status.isSuccess()) {
+                response.body<VideoResponse>()
+            } else {
+                val errorBody = response.body<String>()
+                println("❌ API responded with error: ${response.status} - $errorBody")
+                null
+            }
+        } catch (e: Exception) {
+            println("❌ API Call Failed: ${e.localizedMessage}")
+            null
         }
     }
 }

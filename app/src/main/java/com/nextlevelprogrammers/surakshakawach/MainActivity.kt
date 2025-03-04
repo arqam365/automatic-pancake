@@ -92,7 +92,7 @@ class MainActivity : ComponentActivity() {
 
         locationUtils = LocationUtils(this)
 
-        requestLocationPermission()
+        requestPermissions()
 
         enableEdgeToEdge()
         setContent {
@@ -298,8 +298,10 @@ class MainActivity : ComponentActivity() {
 
     //Location
 
-    private fun requestLocationPermission() {
+    private fun requestPermissions() {
         val permissions = arrayOf(
+            Manifest.permission.CAMERA,
+            Manifest.permission.RECORD_AUDIO,
             Manifest.permission.ACCESS_FINE_LOCATION,
             Manifest.permission.ACCESS_COARSE_LOCATION
         )
@@ -308,10 +310,11 @@ class MainActivity : ComponentActivity() {
             registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
                 val allGranted = permissions.values.all { it }
                 if (allGranted) {
-                    Log.d("MainActivity", "Location permissions granted")
+                    Log.d("MainActivity", "✅ All permissions granted")
                     fetchLocation() // ✅ Fetch location after permission granted
                 } else {
-                    Log.e("MainActivity", "Location permissions denied")
+                    Log.e("MainActivity", "❌ Some permissions were denied")
+                    Toast.makeText(this, "Permissions are required for full functionality!", Toast.LENGTH_LONG).show()
                 }
             }
 

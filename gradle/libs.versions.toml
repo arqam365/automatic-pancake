@@ -56,7 +56,6 @@ firebase-bom = { group = "com.google.firebase", name = "firebase-bom", version.r
 firebase-auth = { group = "com.google.firebase", name = "firebase-auth", version.ref = "firebase-bom" }
 firebase-firestore-ktx = { group = "com.google.firebase", name = "firebase-firestore-ktx", version.ref = "firebase-bom" }
 firebase-messaging-ktx = { module = "com.google.firebase:firebase-messaging-ktx", version.ref = "firebase-bom" }
-firebase-common = { group = "com.google.firebase", name = "firebase-common", version.ref = "firebase-bom" }
 
 # ✅ Google Play Services Auth (Fixes `NoClassDefFoundError`)
 play-services-auth = { group = "com.google.android.gms", name = "play-services-auth", version.ref = "playServicesAuth" }
