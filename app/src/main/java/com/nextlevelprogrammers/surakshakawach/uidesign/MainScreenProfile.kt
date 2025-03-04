@@ -25,34 +25,35 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import com.nextlevelprogrammers.surakshakawach.MainActivity.UserData
-import com.nextlevelprogrammers.surakshakawach.R
-import com.nextlevelprogrammers.surakshakawach.ui.theme.SurakshaKavachUITheme
 import com.google.firebase.auth.FirebaseAuth
+import com.nextlevelprogrammers.surakshakawach.MainActivity
+import com.nextlevelprogrammers.surakshakawach.R
 
 @Composable
 fun MainScreenProfile(modifier: Modifier = Modifier, onSignOutClick: () -> Unit){
     Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center){
-        val currentUser: UserData?
+        val currentUser: MainActivity.UserData?
             val firebaseUser = FirebaseAuth.getInstance().currentUser
               currentUser= firebaseUser?.let {
-                    UserData(
-                        uid = it.uid,
-                        displayName = it.displayName,
-                        email = it.email,
-                        photoUrl = it.photoUrl?.toString(),
-                        phoneNumber = it.phoneNumber
-                    )
+                  MainActivity.UserData(
+                      uid = it.uid,
+                      displayName = it.displayName,
+                      email = it.email,
+                      photoUrl = it.photoUrl?.toString(),
+                      phoneNumber = it.phoneNumber
+                  )
             }
         ProfileCard(onSignOutClick=onSignOutClick,user=currentUser)
     }
 }
 
 @Composable
-fun ProfileCard(modifier: Modifier = Modifier, onSignOutClick: () -> Unit, user:UserData?) {
+fun ProfileCard(
+    modifier: Modifier = Modifier,
+    onSignOutClick: () -> Unit,
+    user: MainActivity.UserData?, ) {
     val user_name= user?.displayName
     val user_email= user?.email
     val user_gender="Male"
@@ -104,11 +105,4 @@ fun ProfileCard(modifier: Modifier = Modifier, onSignOutClick: () -> Unit, user:
     }
 }
 
-@Preview(showBackground = true)
-@Composable
-fun DisplyProfile(){
-    SurakshaKavachUITheme {
-
-    }
-}
 

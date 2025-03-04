@@ -24,14 +24,15 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.navigation.NavController
 import com.nextlevelprogrammers.surakshakawach.R
+import com.nextlevelprogrammers.surakshakawach.Routes
 
 @Composable
 
-fun MainScreenHome(modifier: Modifier) {
+fun MainScreenHome(modifier: Modifier, navController: NavController) {
     val user_name = "Sharad"
     val user_profile_picture = painterResource(R.drawable.sosbutton)
     Column(
@@ -63,18 +64,18 @@ fun MainScreenHome(modifier: Modifier) {
 
         Box(modifier=modifier.weight(1f).fillMaxSize().padding(12.dp))
         {
-            SOSDisplay(modifier)
+            SOSDisplay(modifier, navController)
         }
     }
 }
 
 @Composable
-fun SOSDisplay(modifier: Modifier){
+fun SOSDisplay(modifier: Modifier, navController: NavController){
     Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter){
         Box(modifier.fillMaxWidth().fillMaxHeight(0.885f).align(Alignment.TopCenter), contentAlignment = Alignment.BottomCenter){
             Box(modifier=modifier.fillMaxSize().shadow(2.dp,RoundedCornerShape(28.dp)).clip(RoundedCornerShape(28.dp)).background(Color.Gray))
             IconButton(modifier=modifier.size(150.dp).offset(y=(75.dp)),
-                onClick = {}){
+                onClick = {navController.navigate(Routes.COUNTDOWN_SCREEN)}){
                 Image(
                     painter=painterResource(R.drawable.sosbutton),
                     contentDescription = "SOSButton"

@@ -1,11 +1,20 @@
 package com.nextlevelprogrammers.surakshakawach
 
+import android.app.Activity
+import android.app.admin.DevicePolicyManager
+import android.content.ComponentName
+import android.content.Context
+import android.content.Intent
+import android.content.SharedPreferences
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.ActivityResultLauncher
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
@@ -27,10 +36,13 @@ import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
 import com.google.firebase.messaging.FirebaseMessaging
 import com.nextlevelprogrammers.surakshakawach.data.remote.ApiService
+import com.nextlevelprogrammers.surakshakawach.deviceadmin.MyDeviceAdminReceiver
 import com.nextlevelprogrammers.surakshakawach.model.AuthRequest
-import com.nextlevelprogrammers.surakshakawach.ui.theme.SurakshaKavachUITheme
+import com.nextlevelprogrammers.surakshakawach.ui.theme.SurakshaKawachTheme
+import com.nextlevelprogrammers.surakshakawach.uidesign.CountdownWindow
 import com.nextlevelprogrammers.surakshakawach.uidesign.GetStartedLogin
 import com.nextlevelprogrammers.surakshakawach.uidesign.MainScreen
+import com.nextlevelprogrammers.surakshakawach.uidesign.SOSGranted
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
@@ -46,34 +58,57 @@ class MainActivity : ComponentActivity() {
     private lateinit var auth: FirebaseAuth
     private lateinit var credentialManager: CredentialManager
     private lateinit var userData: UserData
+    private lateinit var deviceAdminLauncher: ActivityResultLauncher<Intent>
+    private lateinit var sharedPreferences: SharedPreferences
+
 
     @RequiresApi(Build.VERSION_CODES.Q)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+
+        sharedPreferences = getSharedPreferences("AppPrefs", Context.MODE_PRIVATE)
+
+        deviceAdminLauncher = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            if (result.resultCode == Activity.RESULT_OK) {
+                Toast.makeText(this, "Device Admin Enabled", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this, "Device Admin Not Enabled", Toast.LENGTH_SHORT).show()
+            }
+        }
+
+        if (!isDeviceAdminEnabled()) {
+            requestDeviceAdmin()
+        }
 
         auth = FirebaseAuth.getInstance()
         credentialManager = CredentialManager.create(this)
 
         enableEdgeToEdge()
         setContent {
-            SurakshaKavachUITheme {
+            SurakshaKawachTheme {
                 Scaffold { innerPadding ->
                     val navController = rememberNavController()
-                    val startDestination = if (auth.currentUser != null) "MainScreen" else "GetStarted"
+                    val startDestination = if (auth.currentUser != null) Routes.MAIN_SCREEN else Routes.GET_STARTED
 
                     NavHost(navController, startDestination = startDestination) {
-                        composable("GetStarted") {
+                        composable(Routes.GET_STARTED) {
                             GetStartedLogin(
                                 navController = navController,
                                 onGoogleSignInClick = { signInWithGoogle(navController) } // ✅ Pass Sign-In Click
                             )
                         }
-                        composable("MainScreen") {
+                        composable(Routes.MAIN_SCREEN) {
                             MainScreen(
                                 Modifier.padding(innerPadding),
                                 navController = navController,
                                 onSignOutClick={signOut(navController)}
                             )
+                        }
+                        composable(Routes.COUNTDOWN_SCREEN){
+                            CountdownWindow(navController=navController)
+                        }
+                        composable(Routes.SOS_SENT){
+                            SOSGranted()
                         }
                     }
                 }
@@ -167,8 +202,8 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                     // Here we navigate to the Main Screen----
-                    navController.navigate("MainScreen"){
-                        popUpTo("GetStarted"){inclusive=true} //This is how we remove the previous graph darling.
+                    navController.navigate(Routes.MAIN_SCREEN){
+                        popUpTo(Routes.GET_STARTED){inclusive=true} //This is how we remove the previous graph darling.
                     }
                 } else {
                     Log.e(TAG, "❌ Firebase authentication failed: ${task.exception?.localizedMessage}")
@@ -230,6 +265,21 @@ class MainActivity : ComponentActivity() {
         navController.navigate("GetStarted"){
             popUpTo("MainScreen"){inclusive=true}
         }
+    }
+
+    private fun isDeviceAdminEnabled(): Boolean {
+        val dpm = getSystemService(Context.DEVICE_POLICY_SERVICE) as DevicePolicyManager
+        val componentName = ComponentName(this, MyDeviceAdminReceiver::class.java)
+        return dpm.isAdminActive(componentName) || sharedPreferences.getBoolean("isDeviceAdminEnabled", false)
+    }
+
+    private fun requestDeviceAdmin() {
+        val componentName = ComponentName(this, MyDeviceAdminReceiver::class.java)
+        val intent = Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN).apply {
+            putExtra(DevicePolicyManager.EXTRA_DEVICE_ADMIN, componentName)
+            putExtra(DevicePolicyManager.EXTRA_ADD_EXPLANATION, "Enable admin to protect your data.")
+        }
+        deviceAdminLauncher.launch(intent)
     }
 
 

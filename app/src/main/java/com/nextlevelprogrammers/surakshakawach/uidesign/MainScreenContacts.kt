@@ -98,7 +98,7 @@ fun ContactScreen(modifier: Modifier, state:ContactScreenStateValues,onAction:(C
         FloatingActionButton(
             onClick = {onAction(ContactScreenAction.OnClickAddContact)},
 
-        ){
+            ){
             Icon(Icons.Default.Add, contentDescription = "Add")
         }
     }) {innerPadding->
@@ -131,7 +131,7 @@ fun ContactScreen(modifier: Modifier, state:ContactScreenStateValues,onAction:(C
             }
             //Add Contact Dialog Box
             if(state.showAddDialog){
-               AddContact(state.showAddDialog, onAction)
+                AddContact(state.showAddDialog, onAction)
             }
         }
     }
@@ -252,7 +252,7 @@ fun ContactCard(modifier: Modifier = Modifier, contact: ContactInfo) {
             .fillMaxWidth()
     ) {
         Column(modifier=modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background)
-        .clip(RoundedCornerShape(4.dp))
+            .clip(RoundedCornerShape(4.dp))
         ) {
             Text(text = contact.name, modifier.padding(start = 6.dp))
             Text(text = contact.phone_number, modifier.padding(start = 6.dp))
@@ -384,4 +384,3 @@ fun DeleteBackground(swipeDismissState: SwipeToDismissBoxState) {
         )
     }
 }
-
