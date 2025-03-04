@@ -1,19 +1,37 @@
 package com.nextlevelprogrammers.surakshakawach.data.remote
 
+import android.os.Build
+import androidx.annotation.RequiresApi
 import com.nextlevelprogrammers.surakshakawach.model.ApiResponse
 import com.nextlevelprogrammers.surakshakawach.model.AuthRequest
 import com.nextlevelprogrammers.surakshakawach.model.AuthResponse
 import com.nextlevelprogrammers.surakshakawach.model.ContactRequest
 import com.nextlevelprogrammers.surakshakawach.model.ContactResponse
+import com.nextlevelprogrammers.surakshakawach.model.LocationUpdateRequest
+import com.nextlevelprogrammers.surakshakawach.model.SOSRequest
 import io.ktor.client.*
 import io.ktor.client.call.*
+import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
+import io.ktor.serialization.kotlinx.json.json
+import kotlinx.serialization.json.Json
+import java.time.Instant
 
-class ApiService(private val client: HttpClient) {
+class ApiService() {
 
     private val BASE_URL = "https://kawach-v2-backend-production-809410945582.asia-south1.run.app"
+
+    private val client = HttpClient {
+        install(ContentNegotiation) {
+            json(Json {
+                prettyPrint = true
+                isLenient = true
+                ignoreUnknownKeys = true
+            })
+        }
+    }
 
     suspend fun authenticateUser(authRequest: AuthRequest): AuthResponse {
         return try {
@@ -65,6 +83,39 @@ class ApiService(private val client: HttpClient) {
         } catch (e: Exception) {
             println("❌ Failed to fetch contacts: ${e.localizedMessage}")
             emptyList()
+        }
+    }
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    suspend fun createSOS(userId: String, latitude: Double, longitude: Double): HttpResponse {
+        val requestBody = SOSRequest(
+            latitude = latitude,
+            longitude = longitude,
+            created_at = Instant.now().toString()
+        )
+
+        val url = "$BASE_URL/v2/user/$userId/ticket/"
+
+        return client.post(url) {
+            contentType(ContentType.Application.Json)
+            setBody(requestBody)
+        }
+    }
+
+
+    @RequiresApi(Build.VERSION_CODES.O)
+    suspend fun updateLocation(userId: String, ticketId: String, latitude: Double, longitude: Double): HttpResponse {
+        val requestBody = LocationUpdateRequest(
+            latitude = latitude,
+            longitude = longitude,
+            created_at = Instant.now().toString()
+        )
+
+        val url = "$BASE_URL/v2/user/$userId/ticket/$ticketId/location"
+
+        return client.post(url) {
+            contentType(ContentType.Application.Json) // ✅ Ensure correct content type
+            setBody(requestBody) // ✅ Send the updated location data
         }
     }
 }
