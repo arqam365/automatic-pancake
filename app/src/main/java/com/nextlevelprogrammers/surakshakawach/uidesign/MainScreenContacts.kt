@@ -73,13 +73,7 @@ fun MainScreenContactRoot(modifier: Modifier) {
     val database = remember { AppDatabase.getDatabase(context) }
     val contactDao = remember { database.contactDao() }
     val apiService = remember {
-        ApiService(
-            HttpClient {
-                install(ContentNegotiation) {
-                    json()
-                }
-            }
-        )
+        ApiService()
     }
 
     val contactRepository = remember { ContactRepository(apiService, contactDao) }

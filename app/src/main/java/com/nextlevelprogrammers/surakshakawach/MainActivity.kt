@@ -1,11 +1,13 @@
 package com.nextlevelprogrammers.surakshakawach
 
+import android.Manifest
 import android.app.Activity
 import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
 import android.content.SharedPreferences
+import android.content.pm.PackageManager
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -19,6 +21,7 @@ import androidx.annotation.RequiresApi
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.ui.Modifier
+import androidx.core.content.ContextCompat
 import androidx.credentials.CredentialManager
 import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
@@ -43,6 +46,7 @@ import com.nextlevelprogrammers.surakshakawach.uidesign.CountdownWindow
 import com.nextlevelprogrammers.surakshakawach.uidesign.GetStartedLogin
 import com.nextlevelprogrammers.surakshakawach.uidesign.MainScreen
 import com.nextlevelprogrammers.surakshakawach.uidesign.SOSGranted
+import com.nextlevelprogrammers.surakshakawach.utils.LocationUtils
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
@@ -60,6 +64,8 @@ class MainActivity : ComponentActivity() {
     private lateinit var userData: UserData
     private lateinit var deviceAdminLauncher: ActivityResultLauncher<Intent>
     private lateinit var sharedPreferences: SharedPreferences
+
+    private lateinit var locationUtils: LocationUtils
 
 
     @RequiresApi(Build.VERSION_CODES.Q)
@@ -83,6 +89,10 @@ class MainActivity : ComponentActivity() {
 
         auth = FirebaseAuth.getInstance()
         credentialManager = CredentialManager.create(this)
+
+        locationUtils = LocationUtils(this)
+
+        requestLocationPermission()
 
         enableEdgeToEdge()
         setContent {
@@ -110,7 +120,8 @@ class MainActivity : ComponentActivity() {
                             CountdownWindow(navController=navController)
                         }
                         composable(Routes.SOS_SENT){
-                            SOSGranted()
+                            val userId = auth.currentUser?.uid ?: "unknown"
+                            SOSGranted(context = this@MainActivity, userId = userId)
                         }
                     }
                 }
@@ -227,7 +238,7 @@ class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.O)
     private fun sendAuthDataToBackend(firebaseUid: String, dateOfBirth: String, fcmId: String, navController: NavHostController) {
         lifecycleScope.launch(Dispatchers.IO) {
-            val apiService = ApiService(httpClient)
+            val apiService = ApiService()
 
             try {
                 val formattedDob = try {
@@ -287,6 +298,41 @@ class MainActivity : ComponentActivity() {
 
     //Location
 
+    private fun requestLocationPermission() {
+        val permissions = arrayOf(
+            Manifest.permission.ACCESS_FINE_LOCATION,
+            Manifest.permission.ACCESS_COARSE_LOCATION
+        )
+
+        val requestPermissionLauncher =
+            registerForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { permissions ->
+                val allGranted = permissions.values.all { it }
+                if (allGranted) {
+                    Log.d("MainActivity", "Location permissions granted")
+                    fetchLocation() // ✅ Fetch location after permission granted
+                } else {
+                    Log.e("MainActivity", "Location permissions denied")
+                }
+            }
+
+        val allPermissionsGranted = permissions.all {
+            ContextCompat.checkSelfPermission(this, it) == PackageManager.PERMISSION_GRANTED
+        }
+
+        if (allPermissionsGranted) {
+            fetchLocation()
+        } else {
+            requestPermissionLauncher.launch(permissions)
+        }
+    }
+
+    private fun fetchLocation() {
+        lifecycleScope.launch(Dispatchers.Main) {
+            locationUtils.getLastKnownLocation { latitude, longitude ->
+                Log.d("MainActivity", "Fetched Location: Lat: $latitude, Long: $longitude")
+            }
+        }
+    }
 
 
     companion object {
