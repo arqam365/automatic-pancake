@@ -248,7 +248,7 @@ class MainActivity : ComponentActivity() {
                     Log.d(TAG, "✅ User authenticated successfully! User ID: ${response.user_id}")
                     withContext(Dispatchers.Main) {
                         navController.navigate("MainScreen") {
-                            popUpTo("MainScreenHome") { inclusive = true }
+                            popUpTo("GetStarted") { inclusive = true }
                         }
                     }
                 } else {
@@ -282,6 +282,8 @@ class MainActivity : ComponentActivity() {
         deviceAdminLauncher.launch(intent)
     }
 
+
+    //Location
 
 
 
