@@ -68,8 +68,8 @@ dependencies {
     implementation(libs.play.services.auth) // ✅ Fixes missing CredentialsOptions.Builder
 
     // ✅ Jetpack Navigation
-    implementation("androidx.navigation:navigation-compose:2.8.7")
-    implementation("androidx.navigation:navigation-fragment:2.8.7")
+    implementation(libs.androidx.navigation.compose)
+    implementation(libs.androidx.navigation.fragment)
     implementation("androidx.navigation:navigation-ui:2.8.7")
     implementation(libs.androidx.credentials)
     implementation(libs.androidx.credentials.play.services.auth)
@@ -124,5 +124,7 @@ dependencies {
 
     implementation("com.google.api-client:google-api-client:2.2.0")
     implementation("com.google.http-client:google-http-client-gson:1.42.3")
+
+    implementation (libs.play.services.location)
 
 }
