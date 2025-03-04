@@ -1,4 +1,4 @@
-package com.example.surakshakavachui
+package com.nextlevelprogrammers.surakshakawach
 
 import android.app.Activity
 import android.app.admin.DevicePolicyManager
@@ -34,18 +34,15 @@ import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential
 import com.google.android.libraries.identity.googleid.GoogleIdTokenCredential.Companion.TYPE_GOOGLE_ID_TOKEN_CREDENTIAL
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.auth.GoogleAuthProvider
+import com.google.firebase.messaging.FirebaseMessaging
+import com.nextlevelprogrammers.surakshakawach.data.remote.ApiService
 import com.nextlevelprogrammers.surakshakawach.deviceadmin.MyDeviceAdminReceiver
-import com.nextlevelprogrammers.surakshakawach.ui.theme.SurakshaKavachUITheme
+import com.nextlevelprogrammers.surakshakawach.model.AuthRequest
+import com.nextlevelprogrammers.surakshakawach.ui.theme.SurakshaKawachTheme
 import com.nextlevelprogrammers.surakshakawach.uidesign.CountdownWindow
 import com.nextlevelprogrammers.surakshakawach.uidesign.GetStartedLogin
 import com.nextlevelprogrammers.surakshakawach.uidesign.MainScreen
 import com.nextlevelprogrammers.surakshakawach.uidesign.SOSGranted
-import com.google.firebase.messaging.FirebaseMessaging
-import com.nextlevelprogrammers.surakshakawach.data.remote.ApiService
-import com.nextlevelprogrammers.surakshakawach.model.AuthRequest
-import com.nextlevelprogrammers.surakshakawach.ui.theme.SurakshaKavachUITheme
-import com.nextlevelprogrammers.surakshakawach.uidesign.GetStartedLogin
-import com.nextlevelprogrammers.surakshakawach.uidesign.MainScreen
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
@@ -88,29 +85,29 @@ class MainActivity : ComponentActivity() {
 
         enableEdgeToEdge()
         setContent {
-            SurakshaKavachUITheme {
+            SurakshaKawachTheme {
                 Scaffold { innerPadding ->
                     val navController = rememberNavController()
-                    val startDestination = if (auth.currentUser != null) "MainScreen" else "GetStarted"
+                    val startDestination = if (auth.currentUser != null) Routes.MAIN_SCREEN else Routes.GET_STARTED
 
                     NavHost(navController, startDestination = startDestination) {
-                        composable("GetStarted") {
+                        composable(Routes.GET_STARTED) {
                             GetStartedLogin(
                                 navController = navController,
                                 onGoogleSignInClick = { signInWithGoogle(navController) } // ✅ Pass Sign-In Click
                             )
                         }
-                        composable("MainScreen") {
+                        composable(Routes.MAIN_SCREEN) {
                             MainScreen(
                                 Modifier.padding(innerPadding),
                                 navController = navController,
                                 onSignOutClick={signOut(navController)}
                             )
                         }
-                        composable("CountScreen"){
+                        composable(Routes.COUNTDOWN_SCREEN){
                             CountdownWindow(navController=navController)
                         }
-                        composable("SOSGranted"){
+                        composable(Routes.SOS_SENT){
                             SOSGranted()
                         }
                     }
@@ -205,8 +202,8 @@ class MainActivity : ComponentActivity() {
                         }
                     }
                     // Here we navigate to the Main Screen----
-                    navController.navigate("MainScreen"){
-                        popUpTo("GetStarted"){inclusive=true} //This is how we remove the previous graph darling.
+                    navController.navigate(Routes.MAIN_SCREEN){
+                        popUpTo(Routes.GET_STARTED){inclusive=true} //This is how we remove the previous graph darling.
                     }
                 } else {
                     Log.e(TAG, "❌ Firebase authentication failed: ${task.exception?.localizedMessage}")

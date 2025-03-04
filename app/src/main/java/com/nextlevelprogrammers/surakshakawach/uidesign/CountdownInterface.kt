@@ -21,6 +21,7 @@ import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavHostController
+import com.nextlevelprogrammers.surakshakawach.Routes
 import kotlinx.coroutines.delay
 
 @Composable
@@ -32,7 +33,7 @@ fun CountdownWindow(modifier: Modifier=Modifier, navController: NavHostControlle
             delay(1000L)
             seconds = i
         }
-        navController.navigate("SOSGranted"){navController.popBackStack()}
+        navController.navigate(Routes.SOS_SENT){navController.popBackStack()}
     }
     Box(modifier = modifier.fillMaxSize(),
         contentAlignment = Alignment.Center){
@@ -45,7 +46,7 @@ fun CountdownWindow(modifier: Modifier=Modifier, navController: NavHostControlle
                     Text("Cancel",
                         color = MaterialTheme.colorScheme.onBackground)
                 }
-                Button(onClick = {navController.navigate("SOSGranted"){navController.popBackStack()} }){
+                Button(onClick = {navController.navigate(Routes.SOS_SENT){navController.popBackStack()} }){
                     Text("Send SOS",
                         color = MaterialTheme.colorScheme.onPrimary)
                 }

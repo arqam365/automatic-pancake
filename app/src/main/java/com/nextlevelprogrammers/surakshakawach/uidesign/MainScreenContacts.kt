@@ -1,4 +1,4 @@
-package com.example.surakshakavachui.uidesign
+package com.nextlevelprogrammers.surakshakawach.uidesign
 
 import android.widget.Toast
 import androidx.compose.animation.AnimatedVisibility
@@ -64,9 +64,6 @@ import com.nextlevelprogrammers.surakshakawach.repository.ContactRepository
 import io.ktor.client.HttpClient
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
 import io.ktor.serialization.kotlinx.json.json
-import com.nextlevelprogrammers.surakshakawach.IntentAction.ContactScreenAction
-import com.nextlevelprogrammers.surakshakawach.ViewModels.ContactScreenStateValues
-import com.nextlevelprogrammers.surakshakawach.ViewModels.ContactScreenViewModel
 import kotlinx.coroutines.delay
 
 @Composable
@@ -101,7 +98,7 @@ fun ContactScreen(modifier: Modifier, state:ContactScreenStateValues,onAction:(C
         FloatingActionButton(
             onClick = {onAction(ContactScreenAction.OnClickAddContact)},
 
-        ){
+            ){
             Icon(Icons.Default.Add, contentDescription = "Add")
         }
     }) {innerPadding->
@@ -134,7 +131,7 @@ fun ContactScreen(modifier: Modifier, state:ContactScreenStateValues,onAction:(C
             }
             //Add Contact Dialog Box
             if(state.showAddDialog){
-               AddContact(state.showAddDialog, onAction)
+                AddContact(state.showAddDialog, onAction)
             }
         }
     }
@@ -144,14 +141,6 @@ fun ContactScreen(modifier: Modifier, state:ContactScreenStateValues,onAction:(C
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AddContact(showAddDialog:Boolean, onAction: (ContactScreenAction) -> Unit)
-{
-
-    var name by remember{ mutableStateOf("")}
-    var number by remember{ mutableStateOf("")}
-    var email by remember{ mutableStateOf("")}
-    val context= LocalContext.current
-    if(showAddDialog){
 fun AddContact(showAddDialog: Boolean, onAction: (ContactScreenAction) -> Unit) {
     var name by remember { mutableStateOf("") }
     var number by remember { mutableStateOf("") }
@@ -263,7 +252,7 @@ fun ContactCard(modifier: Modifier = Modifier, contact: ContactInfo) {
             .fillMaxWidth()
     ) {
         Column(modifier=modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background)
-        .clip(RoundedCornerShape(4.dp))
+            .clip(RoundedCornerShape(4.dp))
         ) {
             Text(text = contact.name, modifier.padding(start = 6.dp))
             Text(text = contact.phone_number, modifier.padding(start = 6.dp))
@@ -395,4 +384,3 @@ fun DeleteBackground(swipeDismissState: SwipeToDismissBoxState) {
         )
     }
 }
-
