@@ -9,12 +9,15 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
@@ -26,6 +29,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuAnchorType
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
@@ -43,6 +47,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -88,6 +93,9 @@ fun MainScreenContactRoot(modifier: Modifier) {
 @Composable
 fun ContactScreen(modifier: Modifier, state:ContactScreenStateValues,onAction:(ContactScreenAction)->Unit) {
 
+    val contacts by rememberUpdatedState(state.contactList) // ✅ Ensures UI updates
+
+
     Scaffold(floatingActionButton = {
         FloatingActionButton(
             onClick = {onAction(ContactScreenAction.OnClickAddContact)},
@@ -104,12 +112,22 @@ fun ContactScreen(modifier: Modifier, state:ContactScreenStateValues,onAction:(C
                     fontWeight = FontWeight.Bold,
                     modifier = modifier.padding(bottom = 8.dp, start = 20.dp)
                 )
-                Column(
+                LazyColumn(
                     modifier = Modifier.fillMaxSize(),
-                    verticalArrangement = Arrangement.Center,
-                    horizontalAlignment = Alignment.CenterHorizontally
+                    verticalArrangement = Arrangement.spacedBy(10.dp),
+                    contentPadding = PaddingValues(16.dp)
                 ) {
-                    Text(text = "Testing Contact Addition to Database")
+                    itemsIndexed(
+                        items = state.contactList,
+                        key = { _, contact -> contact.phone_number } // ✅ Ensure unique key
+                    ) { _, contact ->
+                        SwipeContainer(
+                            item = contact,
+                            onAction = onAction
+                        ) {
+                            ContactCard(contact = contact)
+                        }
+                    }
                 }
             }
 
@@ -187,7 +205,7 @@ fun AddContact(showAddDialog: Boolean, onAction: (ContactScreenAction) -> Unit) 
                             label = { Text("Relationship") },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .menuAnchor(), // ✅ This is required for dropdown to expand
+                                .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable, enabled = true), // ✅ Corrected here
                             trailingIcon = {
                                 Icon(
                                     imageVector = Icons.Default.ArrowDropDown,
@@ -204,8 +222,8 @@ fun AddContact(showAddDialog: Boolean, onAction: (ContactScreenAction) -> Unit) 
                                 DropdownMenuItem(
                                     text = { Text(option) },
                                     onClick = {
-                                        relationship = option // ✅ Set selected value
-                                        expanded = false // ✅ Close dropdown
+                                        relationship = option
+                                        expanded = false
                                     }
                                 )
                             }

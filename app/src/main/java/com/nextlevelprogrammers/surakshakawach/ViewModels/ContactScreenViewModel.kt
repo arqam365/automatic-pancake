@@ -15,6 +15,15 @@ class ContactScreenViewModel(private val contactRepository: ContactRepository) :
     private val _state = MutableStateFlow(ContactScreenStateValues())
     val state = _state.asStateFlow()
 
+    init {
+        viewModelScope.launch {
+            contactRepository.getContactsFromRoom().collect { contacts ->
+                _state.update { it.copy(contactList = contacts) } // ✅ Auto-update UI
+            }
+        }
+    }
+
+
     fun onAction(action: ContactScreenAction) {
         when (action) {
             ContactScreenAction.OnCancelSaveContact -> {
