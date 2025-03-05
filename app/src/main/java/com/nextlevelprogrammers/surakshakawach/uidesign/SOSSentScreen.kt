@@ -4,10 +4,15 @@ import android.content.Context
 import android.os.Build
 import android.util.Log
 import androidx.annotation.RequiresApi
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
 import com.nextlevelprogrammers.surakshakawach.data.remote.ApiService
 import com.nextlevelprogrammers.surakshakawach.emergency_videos.VideoRecorder
 import com.nextlevelprogrammers.surakshakawach.model.TicketResponse
@@ -34,7 +39,7 @@ fun SOSGranted(context: Context, userId: String) {
     LaunchedEffect(Unit) {
         videoRecorder.initializeCamera()
 
-        videoRecorder.startContinuousRecording(userId) { videoUrl, bucketUrl ->
+        videoRecorder.startContinuousRecording() { videoUrl, bucketUrl ->
             Log.d("SOSGranted", "✅ Video Uploaded, Sending to API")
 
             ticketId?.let { ticket ->
@@ -82,9 +87,66 @@ fun SOSGranted(context: Context, userId: String) {
         }
     }
 
-    Box(contentAlignment = Alignment.Center) {
-        Text("Status: $ticketStatus\n$locationText")
+    Box(
+        modifier = Modifier
+            .fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center,
+            modifier = Modifier.fillMaxSize()
+        ) {
+            Text("Status: $ticketStatus\n$locationText")
+
+            // **STOP SOS BUTTON**
+            Button(onClick = {
+                coroutineScope.launch {
+                    stopSOS(ticketId, userId, videoRecorder, apiService) { success ->
+                        if (success) {
+                            ticketStatus = "Closed"
+                            Log.d("SOSGranted", "✅ SOS Stopped & Ticket Closed")
+                        } else {
+                            Log.e("SOSGranted", "❌ Failed to Close Ticket")
+                        }
+                    }
+                }
+            }) {
+                Text("Stop SOS")
+            }
+        }
     }
+}
+
+/**
+ * ✅ Stop SOS by:
+ * 1. Stopping video recording.
+ * 2. Stopping location updates.
+ * 3. Closing the ticket via API.
+ */
+@RequiresApi(Build.VERSION_CODES.O)
+suspend fun stopSOS(
+    ticketId: String?,
+    userId: String,
+    videoRecorder: VideoRecorder,
+    apiService: ApiService,
+    onComplete: (Boolean) -> Unit
+) {
+    if (ticketId == null) {
+        Log.e("stopSOS", "❌ No active ticket to close!")
+        onComplete(false)
+        return
+    }
+
+    // 1️⃣ **Stop Recording**
+    videoRecorder.stopRecording()
+
+    // 2️⃣ **Stop Location Updates**
+    Log.d("stopSOS", "🛑 Stopping location updates")
+
+    // 3️⃣ **Call Close Ticket API**
+    val isClosed = apiService.closeTicket(userId, ticketId)
+    onComplete(isClosed)
 }
 
 @RequiresApi(Build.VERSION_CODES.O)

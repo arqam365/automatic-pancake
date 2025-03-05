@@ -1,6 +1,7 @@
 package com.nextlevelprogrammers.surakshakawach.data.remote
 
 import android.os.Build
+import android.util.Log
 import androidx.annotation.RequiresApi
 import com.nextlevelprogrammers.surakshakawach.model.ApiResponse
 import com.nextlevelprogrammers.surakshakawach.model.AuthRequest
@@ -149,6 +150,26 @@ class ApiService() {
         } catch (e: Exception) {
             println("❌ API Call Failed: ${e.localizedMessage}")
             null
+        }
+    }
+
+    suspend fun closeTicket(userId: String, ticketId: String): Boolean {
+        return try {
+            val url = "$BASE_URL/v2/user/$userId/ticket/$ticketId/close"
+            val response: HttpResponse = client.put(url) {
+                contentType(ContentType.Application.Json)
+            }
+
+            if (response.status.isSuccess()) {
+                Log.d("ApiService", "✅ Ticket closed successfully!")
+                true
+            } else {
+                Log.e("ApiService", "❌ Failed to close ticket: ${response.status}")
+                false
+            }
+        } catch (e: Exception) {
+            Log.e("ApiService", "❌ API Call Failed: ${e.localizedMessage}")
+            false
         }
     }
 }

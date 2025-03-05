@@ -3,11 +3,6 @@ package com.nextlevelprogrammers.surakshakawach.emergency_videos
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
-import android.media.MediaCodec
-import android.media.MediaCodecInfo
-import android.media.MediaExtractor
-import android.media.MediaFormat
-import android.media.MediaMuxer
 import android.net.Uri
 import android.os.Environment
 import android.util.Log
@@ -15,23 +10,22 @@ import androidx.camera.core.CameraSelector
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.video.*
 import androidx.core.content.ContextCompat
+import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
 import kotlinx.coroutines.*
 import kotlinx.coroutines.tasks.await
 import java.io.File
-import java.nio.ByteBuffer
 import java.text.SimpleDateFormat
 import java.util.*
-import java.util.concurrent.ExecutorService
-import java.util.concurrent.Executors
 
 class VideoRecorder(private val context: Context) {
 
     private var videoCapture: VideoCapture<Recorder>? = null
-    private var currentRecording: Recording? = null // ✅ Store active recording session
-    private val cameraExecutor: ExecutorService = Executors.newSingleThreadExecutor()
-    private val storageReference: StorageReference = FirebaseStorage.getInstance().reference.child("emergency_videos")
+    private var currentRecording: Recording? = null
+    private val storageReference: StorageReference =
+        FirebaseStorage.getInstance("gs://suraksha-kawach-151024-v2-development")
+            .reference.child("emergency_videos")
     private var isRecordingActive = true
 
     /**
@@ -62,12 +56,12 @@ class VideoRecorder(private val context: Context) {
     }
 
     /**
-     * Starts continuous video recording: 30s recording, then 10s gap.
+     * Starts continuous video recording: 15s recording, then 10s gap.
      */
-    fun startContinuousRecording(userId: String, onVideoUploaded: (String, String) -> Unit) {
+    fun startContinuousRecording(onVideoUploaded: (String, String) -> Unit) {
         CoroutineScope(Dispatchers.IO).launch {
             while (isRecordingActive) {
-                val videoFile = startVideoRecording() ?: continue // Skip if recording fails
+                val videoFile = startVideoRecording() ?: continue
                 delay(15000) // 🎥 Record for 15 seconds
 
                 stopVideoRecording(videoFile) { uploadedUrl, bucketUrl ->
@@ -95,7 +89,7 @@ class VideoRecorder(private val context: Context) {
      */
     private fun startVideoRecording(): File? {
         if (!hasCameraPermission() || !hasAudioPermission()) {
-            Log.e("VideoRecorder", "❌ Camera or Audio permission not granted. Cannot start recording!")
+            Log.e("VideoRecorder", "❌ Camera or Audio permission not granted!")
             return null
         }
 
@@ -115,17 +109,16 @@ class VideoRecorder(private val context: Context) {
     }
 
     /**
-     * ✅ Stops recording correctly by using `currentRecording?.stop()`
+     * ✅ Stops recording correctly and uploads video to Firebase.
      */
     private fun stopVideoRecording(file: File, onUploaded: (String, String) -> Unit) {
-        currentRecording?.stop() // ✅ Properly stop recording using stored session
-        currentRecording = null // Reset recording session
+        currentRecording?.stop()
+        currentRecording = null
 
         Log.d("VideoRecorder", "⏹ Video Recording Stopped: ${file.absolutePath}")
 
         CoroutineScope(Dispatchers.IO).launch {
-            val compressedFile = compressVideoFile(file, context) // ✅ Compress video before uploading
-            uploadVideoToFirebase(compressedFile, onUploaded)
+            uploadVideoToFirebase(file, onUploaded)
         }
     }
 
@@ -139,102 +132,23 @@ class VideoRecorder(private val context: Context) {
     }
 
     /**
-     * ✅ Compresses the video file using FFmpeg before uploading to Firebase.
-     */
-    private fun compressVideoFile(inputFile: File, context: Context): File {
-        val outputFile = File(context.getExternalFilesDir(null), "compressed_${inputFile.name}")
-
-        // ✅ Ensure the file exists before processing
-        if (!inputFile.exists() || !inputFile.canRead()) {
-            Log.e("VideoCompression", "❌ Cannot read input video file: ${inputFile.absolutePath}")
-            return inputFile // Use the original file if it's unreadable
-        }
-
-        try {
-            val extractor = MediaExtractor()
-            extractor.setDataSource(inputFile.absolutePath) // 🛑 May fail if the file is not readable
-
-            var trackIndex = -1
-            for (i in 0 until extractor.trackCount) {
-                val format = extractor.getTrackFormat(i)
-                if (format.getString(MediaFormat.KEY_MIME)?.startsWith("video/") == true) {
-                    trackIndex = i
-                    extractor.selectTrack(i)
-                    break
-                }
-            }
-            if (trackIndex == -1) {
-                Log.e("VideoCompression", "❌ No video track found!")
-                return inputFile
-            }
-
-            val format = extractor.getTrackFormat(trackIndex)
-            val mimeType = format.getString(MediaFormat.KEY_MIME) ?: "video/avc"
-
-            val encoder = MediaCodec.createEncoderByType(mimeType)
-            val outputFormat = MediaFormat.createVideoFormat(mimeType, 640, 360)
-
-            outputFormat.setInteger(MediaFormat.KEY_BIT_RATE, 512_000)
-            outputFormat.setInteger(MediaFormat.KEY_FRAME_RATE, 30)
-            outputFormat.setInteger(MediaFormat.KEY_COLOR_FORMAT, MediaCodecInfo.CodecCapabilities.COLOR_FormatSurface)
-            outputFormat.setInteger(MediaFormat.KEY_I_FRAME_INTERVAL, 1)
-
-            encoder.configure(outputFormat, null, null, MediaCodec.CONFIGURE_FLAG_ENCODE)
-            encoder.start()
-
-            val muxer = MediaMuxer(outputFile.absolutePath, MediaMuxer.OutputFormat.MUXER_OUTPUT_MPEG_4)
-            val bufferInfo = MediaCodec.BufferInfo()
-            val byteBuffer = ByteBuffer.allocate(1024 * 1024)
-
-            var isMuxerStarted = false
-            var muxerTrackIndex = -1
-
-            while (true) {
-                val outputBufferIndex = encoder.dequeueOutputBuffer(bufferInfo, 10_000)
-                if (outputBufferIndex >= 0) {
-                    val encodedData = encoder.getOutputBuffer(outputBufferIndex) ?: continue
-
-                    if (!isMuxerStarted) {
-                        muxerTrackIndex = muxer.addTrack(encoder.outputFormat)
-                        muxer.start()
-                        isMuxerStarted = true
-                    }
-
-                    muxer.writeSampleData(muxerTrackIndex, encodedData, bufferInfo)
-                    encoder.releaseOutputBuffer(outputBufferIndex, false)
-
-                    if (bufferInfo.flags and MediaCodec.BUFFER_FLAG_END_OF_STREAM != 0) break
-                }
-            }
-
-            muxer.stop()
-            muxer.release()
-            encoder.stop()
-            encoder.release()
-            extractor.release()
-
-            return if (outputFile.length() > 5 * 1024 * 1024) inputFile else outputFile
-
-        } catch (e: Exception) {
-            Log.e("VideoCompression", "❌ Compression failed: ${e.localizedMessage}")
-            return inputFile
-        }
-    }
-
-    /**
      * ✅ Uploads recorded video to Firebase Storage.
      */
     private suspend fun uploadVideoToFirebase(file: File, onUploaded: (String, String) -> Unit) {
         val fileName = file.name
+        val storageReference = storageReference.child(fileName)
 
-        // ✅ Use the specific Firebase bucket
-        val storage = FirebaseStorage.getInstance("gs://suraksha-kawach-151024-v2-development")
-        val storageReference = storage.reference.child("emergency_videos/$fileName")
+        // ✅ Ensure user is authenticated before uploading
+        val user = FirebaseAuth.getInstance().currentUser
+        if (user == null) {
+            Log.e("FirebaseUpload", "❌ Upload Failed: User is not authenticated!")
+            return
+        }
 
         try {
-            Log.d("FirebaseUpload", "Uploading file: $fileName to Firebase Storage in 'suraksha-kawach-151024-v2-development' bucket")
+            Log.d("FirebaseUpload", "Uploading file: $fileName to Firebase Storage")
 
-            storageReference.putFile(Uri.fromFile(file)).await() // ✅ Upload file
+            storageReference.putFile(Uri.fromFile(file)).await()
             val downloadUrl = storageReference.downloadUrl.await().toString()
             val bucketUrl = "gs://suraksha-kawach-151024-v2-development/emergency_videos/$fileName"
 
