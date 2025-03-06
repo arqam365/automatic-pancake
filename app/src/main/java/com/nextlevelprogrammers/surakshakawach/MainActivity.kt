@@ -109,11 +109,12 @@ class MainActivity : ComponentActivity() {
                             )
                         }
                         composable(Routes.MAIN_SCREEN) {
+                            val userId = auth.currentUser?.uid ?: "unknown"
                             MainScreen(
                                 Modifier.padding(innerPadding),
                                 navController = navController,
                                 onSignOutClick={signOut(navController)},
-                                auth=auth
+                                auth=auth,context = this@MainActivity, userId = userId
                             )
                         }
                         composable(Routes.COUNTDOWN_SCREEN){

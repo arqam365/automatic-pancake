@@ -10,7 +10,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.Button
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import com.nextlevelprogrammers.surakshakawach.data.remote.ApiService
@@ -19,8 +24,6 @@ import com.nextlevelprogrammers.surakshakawach.model.TicketResponse
 import com.nextlevelprogrammers.surakshakawach.utils.LocationUtils
 import io.ktor.client.call.body
 import io.ktor.http.isSuccess
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
