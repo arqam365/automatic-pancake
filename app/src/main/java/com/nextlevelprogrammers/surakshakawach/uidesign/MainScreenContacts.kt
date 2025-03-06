@@ -93,9 +93,6 @@ fun MainScreenContactRoot(modifier: Modifier) {
 @Composable
 fun ContactScreen(modifier: Modifier, state:ContactScreenStateValues,onAction:(ContactScreenAction)->Unit) {
 
-    val contacts by rememberUpdatedState(state.contactList) // ✅ Ensures UI updates
-
-
     Scaffold(floatingActionButton = {
         FloatingActionButton(
             onClick = {onAction(ContactScreenAction.OnClickAddContact)},
@@ -119,7 +116,7 @@ fun ContactScreen(modifier: Modifier, state:ContactScreenStateValues,onAction:(C
                 ) {
                     itemsIndexed(
                         items = state.contactList,
-                        key = { _, contact -> contact.phone_number } // ✅ Ensure unique key
+                        key = { index, contact -> "${contact.phone_number}_$index" } // ✅ Ensure unique key
                     ) { _, contact ->
                         SwipeContainer(
                             item = contact,
@@ -273,6 +270,7 @@ fun ContactCard(modifier: Modifier = Modifier, contact: ContactInfo) {
     }
 }
 
+
 @Composable
 fun SwipeContainer(
     item: ContactInfo,
@@ -280,6 +278,7 @@ fun SwipeContainer(
     animationDuration: Int = 500,
     content: @Composable (ContactInfo) -> Unit
 ) {
+
     var isRemoved by remember { mutableStateOf(false) }
     val state = rememberSwipeToDismissBoxState(
         confirmValueChange = { value ->

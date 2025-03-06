@@ -17,6 +17,11 @@ class ContactScreenViewModel(private val contactRepository: ContactRepository) :
 
     init {
         viewModelScope.launch {
+            val userId = FirebaseAuth.getInstance().currentUser?.uid
+            if (!userId.isNullOrEmpty()) {
+                contactRepository.fetchContactsFromApi(userId) // ✅ Fetch and store API contacts
+            }
+
             contactRepository.getContactsFromRoom().collect { contacts ->
                 _state.update { it.copy(contactList = contacts) } // ✅ Auto-update UI
             }
@@ -88,12 +93,36 @@ class ContactScreenViewModel(private val contactRepository: ContactRepository) :
             }
 
             is ContactScreenAction.OnSwipeContactDelete -> {
-                _state.update {
-                    it.copy(
-                        contactList = it.contactList.filterNot { contact ->
-                            contact == action.contact
+                viewModelScope.launch {
+                    try {
+                        val userId = FirebaseAuth.getInstance().currentUser?.uid
+                        if (userId.isNullOrEmpty()) {
+                            println("❌ User is not logged in!")
+                            return@launch
                         }
-                    )
+
+                        // ✅ Step 1: Delete from Backend API
+                        val isDeletedFromAPI = contactRepository.deleteContactFromApi(userId, action.contact.phone_number)
+
+                        if (isDeletedFromAPI) {
+                            // ✅ Step 2: Delete from Room DB
+                            contactRepository.deleteContact(action.contact)
+
+                            // ✅ Step 3: Update UI State
+                            _state.update {
+                                it.copy(
+                                    contactList = it.contactList.filterNot { contact ->
+                                        contact.phone_number == action.contact.phone_number
+                                    }
+                                )
+                            }
+                            println("✅ Contact deleted from backend and Room")
+                        } else {
+                            println("❌ Failed to delete contact from backend")
+                        }
+                    } catch (e: Exception) {
+                        println("❌ Error deleting contact: ${e.localizedMessage}")
+                    }
                 }
             }
 

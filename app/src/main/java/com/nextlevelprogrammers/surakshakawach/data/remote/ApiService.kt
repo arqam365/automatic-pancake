@@ -83,10 +83,43 @@ class ApiService() {
 
     suspend fun getContacts(userId: String): List<ContactResponse> {
         return try {
-            client.get("$BASE_URL/v2/user/$userId/contacts/").body()
+            val url = "$BASE_URL/v2/user/$userId/contacts/"
+
+            val response: HttpResponse = client.get(url)
+            val rawJson = response.body<String>() // ✅ Get raw JSON before parsing
+
+            println("📜 Raw JSON Response: $rawJson") // ✅ Debug Log
+
+            val parsedResponse = Json.decodeFromString<ApiResponse<List<ContactResponse>>>(rawJson) // ✅ Parse as object first
+
+            println("✅ Successfully parsed API response: $parsedResponse") // ✅ Debug Log
+
+            parsedResponse.data ?: emptyList() // ✅ Return contacts if available
         } catch (e: Exception) {
             println("❌ Failed to fetch contacts: ${e.localizedMessage}")
             emptyList()
+        }
+    }
+
+    suspend fun deleteContact(userId: String, contactId: String): Boolean {
+        return try {
+            val url = "$BASE_URL/v2/user/$userId/contacts/$contactId"
+
+            val response: HttpResponse = client.delete(url) {
+                contentType(ContentType.Application.Json)
+            }
+
+            if (response.status.isSuccess()) {
+                println("✅ Contact deleted successfully from API: $contactId")
+                true
+            } else {
+                val errorBody = response.body<String>()
+                println("❌ API responded with error: ${response.status} - $errorBody")
+                false
+            }
+        } catch (e: Exception) {
+            println("❌ API Call Failed: ${e.localizedMessage}")
+            false
         }
     }
 

@@ -6,6 +6,7 @@ import com.nextlevelprogrammers.surakshakawach.model.*
 import com.nextlevelprogrammers.surakshakawach.uidesign.ContactInfo
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
+import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.withContext
 
@@ -14,26 +15,24 @@ class ContactRepository(
     private val contactDao: ContactDao
 ) {
 
-//    suspend fun getContactsFromApi(): List<ContactInfo> {
-//        return try {
-//            apiService.getContacts().map { it.toContactInfo() }
-//        } catch (e: Exception) {
-//            emptyList()
-//        }
-//    }
-
     fun getContactsFromRoom(): Flow<List<ContactInfo>> {
         return contactDao.getAllContacts().map { list -> list.map { it.toContactInfo() } }
     }
 
     suspend fun saveContactToRoom(contact: ContactInfo) {
         withContext(Dispatchers.IO) {
-            contactDao.insertContact(contact.toContactEntity())
+            val existingContacts = contactDao.getAllContacts().firstOrNull() // ✅ Collect Flow before using `map`
+                ?.map { it.toContactInfo() } ?: emptyList()
+
+            if (existingContacts.none { it.phone_number == contact.phone_number }) { // ✅ Prevent duplicate phone numbers
+                contactDao.insertContact(contact.toContactEntity())
+            } else {
+                println("⚠ Contact with phone number ${contact.phone_number} already exists in Room")
+            }
         }
     }
 
     // ✅ API Fetching Logic (Commented for Now)
-    /*
     suspend fun fetchContactsFromApi(userId: String) {
         withContext(Dispatchers.IO) {
             try {
@@ -44,11 +43,19 @@ class ContactRepository(
             }
         }
     }
-    */
+
+    suspend fun deleteContactFromApi(userId: String, contactId: String): Boolean {
+        return apiService.deleteContact(userId, contactId)
+    }
 
     suspend fun deleteContact(contact: ContactInfo) {
         withContext(Dispatchers.IO) {
-            contactDao.deleteContact(contact.toContactEntity())
+            try {
+                contactDao.deleteContact(contact.toContactEntity()) // ✅ Remove from Room
+                println("✅ Deleted contact from Room DB: ${contact.phone_number}")
+            } catch (e: Exception) {
+                println("❌ Error deleting contact: ${e.localizedMessage}")
+            }
         }
     }
 
