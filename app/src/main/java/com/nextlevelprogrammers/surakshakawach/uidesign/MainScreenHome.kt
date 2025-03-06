@@ -49,6 +49,7 @@ import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.rememberCameraPositionState
 import com.google.maps.android.compose.rememberMarkerState
 import com.nextlevelprogrammers.surakshakawach.R
+import com.nextlevelprogrammers.surakshakawach.Routes
 import com.nextlevelprogrammers.surakshakawach.utils.LocationUtils
 import kotlinx.coroutines.delay
 
@@ -59,7 +60,8 @@ fun MainScreenHome(
     navController: NavController,
     auth: FirebaseAuth,
     activateSOS: () -> Unit
-) {
+)
+{
     val user= auth.currentUser
     val user_name = user?.displayName
     val user_profile_picture = user?.photoUrl
@@ -97,10 +99,17 @@ fun MainScreenHome(
                 SOSDisplay(modifier, navController,showCountDownDialog,sendSOS={showCountDownDialog=true})
             }
         }
+        if(showCountDownDialog){
+            CountDownDialog(
+                showCountDownDialog = showCountDownDialog,
+                hideSOSDialog = {showCountDownDialog=false},
+                activateSOS = {activateSOS()
+                    navController.navigate(Routes.SOS_SENT)}
+            )
+        }
     }
     
 }
-
 
 @Composable
 fun SOSDisplay(
@@ -110,7 +119,6 @@ fun SOSDisplay(
     sendSOS: () -> Unit
 ){
     val context= LocalContext.current
-fun SOSDisplay(modifier: Modifier, navController: NavController){
     val locationUtils = remember { LocationUtils(navController.context) }
     val userLocation = remember { mutableStateOf(LatLng(25.4485, 78.5689)) }
 
@@ -155,8 +163,6 @@ fun SOSDisplay(modifier: Modifier, navController: NavController){
 
     }
 }
-}
-
 ////This is the dialog box for Countdown/////////
 
 @OptIn(ExperimentalMaterial3Api::class)

@@ -1,7 +1,6 @@
 package com.nextlevelprogrammers.surakshakawach.uidesign
 
 import android.os.Build
-import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
@@ -23,7 +22,6 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateOf
@@ -45,9 +43,6 @@ import com.nextlevelprogrammers.surakshakawach.MainActivity
 import com.nextlevelprogrammers.surakshakawach.R
 import com.nextlevelprogrammers.surakshakawach.data.remote.ApiService
 import com.nextlevelprogrammers.surakshakawach.utils.LocationUtils
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -119,11 +114,6 @@ fun MainScreen(
             }
         }
     ) { innerPadding ->
-
-        if(SOS_Status){
-            SoSServiceActivation(locationUtils, coroutineScope, apiService, userId)
-        }
-
         Box(modifier = Modifier.padding(innerPadding)) {
             when (selectedIndex) {
                 0 -> MainScreenHome(Modifier, navController,auth,activateSOS={SOS_Status=true})
@@ -132,56 +122,4 @@ fun MainScreen(
             }
         }
     }
-}
-
-@RequiresApi(Build.VERSION_CODES.O)
-@Composable
-fun SoSServiceActivation(
-    locationUtils: LocationUtils,
-    coroutineScope: CoroutineScope,
-    apiService: ApiService,
-    userId: String,
-)
-{
-    var locationText by remember { mutableStateOf("Fetching location...") }
-    var ticketId by remember { mutableStateOf<String?>(null) }
-    var ticketStatus by remember { mutableStateOf("Pending") }
-    LaunchedEffect(Unit) {
-            locationUtils.getLastKnownLocation { latitude, longitude ->
-                locationText = "Lat: $latitude, Long: $longitude"
-                Log.d("SOSGranted", "Live Location: Lat: $latitude, Long: $longitude")
-
-                // **Step 1: Create SOS Ticket**
-                coroutineScope.launch {
-                    val ticketData = createSOS(apiService, userId, latitude, longitude)
-                    ticketId = ticketData?.ticketId
-                    ticketStatus = ticketData?.status ?: "Unknown"
-                    Log.d(
-                        "SOSGranted",
-                        "✅ Ticket Created: ID = $ticketId, Status = $ticketStatus"
-                    )
-                }
-            }
-        }
-
-
-    LaunchedEffect(ticketId) {
-            ticketId?.let { id ->
-                while (ticketStatus == "Active") {
-                    locationUtils.getLastKnownLocation { latitude, longitude ->
-                        locationText = "Lat: $latitude, Long: $longitude"
-                        Log.d(
-                            "SOSGranted",
-                            "Updating SOS Location: Lat: $latitude, Long: $longitude"
-                        )
-
-                        // **Step 2: Update Location Every 5 Sec**
-                        coroutineScope.launch {
-                            updateLocation(apiService, userId, id, latitude, longitude)
-                        }
-                    }
-                    delay(5000) // Fetch and send updated location every 5 seconds
-                }
-            }
-        }
 }
