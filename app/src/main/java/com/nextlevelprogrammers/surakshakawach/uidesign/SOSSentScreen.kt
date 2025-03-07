@@ -12,6 +12,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -19,10 +20,12 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import com.nextlevelprogrammers.surakshakawach.MainActivity
 import com.nextlevelprogrammers.surakshakawach.data.remote.ApiService
 import com.nextlevelprogrammers.surakshakawach.emergency_videos.VideoRecorder
 import com.nextlevelprogrammers.surakshakawach.model.TicketResponse
 import com.nextlevelprogrammers.surakshakawach.utils.LocationUtils
+import com.nextlevelprogrammers.surakshakawach.viewmodel.AuthViewModel
 import io.ktor.client.call.body
 import io.ktor.http.isSuccess
 import kotlinx.coroutines.delay
@@ -33,7 +36,8 @@ import kotlinx.serialization.json.jsonPrimitive
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun SOSGranted(context: Context, userId: String) {
+fun SOSGranted(context: Context, userId: String, authViewModel: AuthViewModel) {
+    val isAuthenticated by authViewModel.isAuthenticated.collectAsState()
     val locationUtils = remember { LocationUtils(context) }
     val apiService = remember { ApiService() }
     val videoRecorder = remember { VideoRecorder(context) }
@@ -92,6 +96,21 @@ fun SOSGranted(context: Context, userId: String) {
             }
         }
     }
+    LaunchedEffect(isAuthenticated) {
+        if (isAuthenticated) {
+            coroutineScope.launch {
+                stopSOS(ticketId, userId, videoRecorder, apiService) { success ->
+                    if (success) {
+                        ticketStatus = "Closed"
+                        Log.d("SOSGranted", "✅ SOS Stopped & Ticket Closed")
+                        authViewModel.resetAuthentication()
+                    } else {
+                        Log.e("SOSGranted", "❌ Failed to Close Ticket")
+                    }
+                }
+            }
+        }
+    }
 
     Box(
         modifier = Modifier
@@ -107,15 +126,8 @@ fun SOSGranted(context: Context, userId: String) {
 
             // **STOP SOS BUTTON**
             Button(onClick = {
-                coroutineScope.launch {
-                    stopSOS(ticketId, userId, videoRecorder, apiService) { success ->
-                        if (success) {
-                            ticketStatus = "Closed"
-                            Log.d("SOSGranted", "✅ SOS Stopped & Ticket Closed")
-                        } else {
-                            Log.e("SOSGranted", "❌ Failed to Close Ticket")
-                        }
-                    }
+                if (!isAuthenticated) {
+                    (context as? MainActivity)?.promptForLockScreen(authViewModel) // ✅ Trigger authentication
                 }
             }) {
                 Text("Stop SOS")

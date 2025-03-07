@@ -2,6 +2,7 @@ package com.nextlevelprogrammers.surakshakawach
 
 import android.Manifest
 import android.app.Activity
+import android.app.KeyguardManager
 import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
 import android.content.Context
@@ -25,6 +26,7 @@ import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.GetCredentialResponse
 import androidx.credentials.exceptions.GetCredentialException
+import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
@@ -45,6 +47,7 @@ import com.nextlevelprogrammers.surakshakawach.uidesign.GetStartedLogin
 import com.nextlevelprogrammers.surakshakawach.uidesign.MainScreen
 import com.nextlevelprogrammers.surakshakawach.uidesign.SOSGranted
 import com.nextlevelprogrammers.surakshakawach.utils.LocationUtils
+import com.nextlevelprogrammers.surakshakawach.viewmodel.AuthViewModel
 import io.ktor.client.HttpClient
 import io.ktor.client.engine.cio.CIO
 import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
@@ -62,13 +65,13 @@ class MainActivity : ComponentActivity() {
     private lateinit var userData: UserData
     private lateinit var deviceAdminLauncher: ActivityResultLauncher<Intent>
     private lateinit var sharedPreferences: SharedPreferences
-
     private lateinit var locationUtils: LocationUtils
 
 
     @RequiresApi(Build.VERSION_CODES.Q)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        val authViewModel = ViewModelProvider(this).get(AuthViewModel::class.java)
 
         sharedPreferences = getSharedPreferences("AppPrefs", Context.MODE_PRIVATE)
 
@@ -112,7 +115,7 @@ class MainActivity : ComponentActivity() {
                                 Modifier,
                                 navController = navController,
                                 onSignOutClick={signOut(navController)},
-                                auth=auth,context = this@MainActivity, userId = userId
+                                auth=auth,context = this@MainActivity, userId = userId,
                             )
                         }
                         composable(Routes.COUNTDOWN_SCREEN){
@@ -120,7 +123,7 @@ class MainActivity : ComponentActivity() {
                         }
                         composable(Routes.SOS_SENT){
                             val userId = auth.currentUser?.uid ?: "unknown"
-                            SOSGranted(context = this@MainActivity, userId = userId)
+                            SOSGranted(context = this@MainActivity, userId = userId, authViewModel = authViewModel)
                         }
                     }
                 }
@@ -336,10 +339,35 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-
     companion object {
         private const val TAG = "GoogleSignIn"
     }
+    fun promptForLockScreen(authViewModel: AuthViewModel) {
+        val keyguardManager = getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
+        if (keyguardManager.isDeviceSecure) {
+            val intent = keyguardManager.createConfirmDeviceCredentialIntent(
+                "Unlock Required",
+                "Please enter your lock screen password"
+            )
+            if (intent != null) {
+                lockScreenLauncher.launch(intent)
+                this.authCallback = { success -> authViewModel.setAuthenticated(success) } // ✅ Update ViewModel
+            }
+        } else {
+            Toast.makeText(this, "No lock screen security set up", Toast.LENGTH_SHORT).show()
+            authViewModel.setAuthenticated(false)
+        }
+    }
+
+    private var authCallback: ((Boolean) -> Unit)? = null
+
+    private val lockScreenLauncher =
+        registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
+            val isAuthenticated = result.resultCode == RESULT_OK
+            authCallback?.invoke(isAuthenticated) // ✅ Update ViewModel
+            authCallback = null
+        }
+
 
 
     data class UserData(
