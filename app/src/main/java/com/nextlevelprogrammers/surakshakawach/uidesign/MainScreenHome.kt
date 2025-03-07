@@ -73,14 +73,14 @@ fun MainScreenHome(
         )
         {
             Row(
-                modifier = modifier.fillMaxWidth().padding(vertical = 4.dp, horizontal = 32.dp),
+                modifier = modifier.fillMaxWidth().padding(vertical = 4.dp, horizontal = 24.dp),
                 verticalAlignment = Alignment.CenterVertically,
                 horizontalArrangement = Arrangement.SpaceBetween
             )
             {
                 Text(
                     text = "Hi, $user_name!",
-                    fontSize = 24.sp
+                    fontSize = 22.sp
                 )
                 Box(
                     modifier = modifier.size(44.dp).clip(CircleShape),
