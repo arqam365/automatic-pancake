@@ -142,5 +142,6 @@ dependencies {
     implementation("androidx.camera:camera-lifecycle:1.4.1")
     implementation("androidx.camera:camera-video:1.4.1")
     implementation ("com.google.accompanist:accompanist-systemuicontroller:0.32.0")
+    implementation ("androidx.datastore:datastore-preferences:1.0.0")
 
 }

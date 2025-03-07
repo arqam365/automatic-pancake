@@ -59,7 +59,7 @@ fun MainScreenHome(
     modifier: Modifier,
     navController: NavController,
     auth: FirebaseAuth,
-    activateSOS: () -> Unit
+    showSOSFloatingButton: () -> Unit
 )
 {
     val user= auth.currentUser
@@ -103,7 +103,7 @@ fun MainScreenHome(
             CountDownDialog(
                 showCountDownDialog = showCountDownDialog,
                 hideSOSDialog = {showCountDownDialog=false},
-                activateSOS = {activateSOS()
+                activateSOS = {showSOSFloatingButton()
                     navController.navigate(Routes.SOS_SENT)}
             )
         }

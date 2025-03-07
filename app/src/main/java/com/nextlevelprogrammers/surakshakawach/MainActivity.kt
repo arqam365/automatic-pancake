@@ -19,6 +19,11 @@ import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
 import androidx.credentials.CredentialManager
@@ -26,8 +31,10 @@ import androidx.credentials.CustomCredential
 import androidx.credentials.GetCredentialRequest
 import androidx.credentials.GetCredentialResponse
 import androidx.credentials.exceptions.GetCredentialException
+import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.lifecycleScope
+import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -46,6 +53,7 @@ import com.nextlevelprogrammers.surakshakawach.uidesign.CountdownWindow
 import com.nextlevelprogrammers.surakshakawach.uidesign.GetStartedLogin
 import com.nextlevelprogrammers.surakshakawach.uidesign.MainScreen
 import com.nextlevelprogrammers.surakshakawach.uidesign.SOSGranted
+import com.nextlevelprogrammers.surakshakawach.uidesign.themeInsets.ThemeViewModel
 import com.nextlevelprogrammers.surakshakawach.utils.LocationUtils
 import com.nextlevelprogrammers.surakshakawach.viewmodel.AuthViewModel
 import io.ktor.client.HttpClient
@@ -71,7 +79,10 @@ class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.Q)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val authViewModel = ViewModelProvider(this)[AuthViewModel::class.java]
+        
+        val authViewModel = ViewModelProvider(this).get(AuthViewModel::class.java)
+
+
 
         sharedPreferences = getSharedPreferences("AppPrefs", Context.MODE_PRIVATE)
 
@@ -97,7 +108,14 @@ class MainActivity : ComponentActivity() {
 
 
         setContent {
-            SurakshaKawachTheme {
+            val themeViewModel: ThemeViewModel = viewModel(factory = object : ViewModelProvider.Factory {
+                override fun <T : ViewModel> create(modelClass: Class<T>): T {
+                    return ThemeViewModel(applicationContext) as T
+                }
+            })
+            val isDarkTheme by themeViewModel.isDarkTheme.collectAsState()
+            var SOS_Status by rememberSaveable{ mutableStateOf(false) }
+            SurakshaKawachTheme(darkTheme = isDarkTheme) {
                 Surface {
                     val navController = rememberNavController()
                     val startDestination = if (auth.currentUser != null) Routes.MAIN_SCREEN else Routes.GET_STARTED
@@ -115,7 +133,8 @@ class MainActivity : ComponentActivity() {
                                 Modifier,
                                 navController = navController,
                                 onSignOutClick={signOut(navController)},
-                                auth=auth,context = this@MainActivity, userId = userId,
+                                auth=auth,context = this@MainActivity, userId = userId,SOS_Status=SOS_Status, hideSOSFloatingButton={SOS_Status=false}, showSOSFloatingButton={SOS_Status=true},
+                                themeViewModel=themeViewModel
                             )
                         }
                         composable(Routes.COUNTDOWN_SCREEN){
@@ -123,7 +142,7 @@ class MainActivity : ComponentActivity() {
                         }
                         composable(Routes.SOS_SENT){
                             val userId = auth.currentUser?.uid ?: "unknown"
-                            SOSGranted(context = this@MainActivity, userId = userId, authViewModel = authViewModel)
+                            SOSGranted(context = this@MainActivity, userId = userId, authViewModel = authViewModel, navController=navController,hideSOSFloatingButton={SOS_Status=false}, showSOSFloatingButton={SOS_Status=true})
                         }
                     }
                 }
