@@ -22,11 +22,9 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -41,8 +39,7 @@ import androidx.navigation.NavController
 import com.google.firebase.auth.FirebaseAuth
 import com.nextlevelprogrammers.surakshakawach.MainActivity
 import com.nextlevelprogrammers.surakshakawach.R
-import com.nextlevelprogrammers.surakshakawach.data.remote.ApiService
-import com.nextlevelprogrammers.surakshakawach.utils.LocationUtils
+import com.nextlevelprogrammers.surakshakawach.uidesign.themeInsets.ThemeViewModel
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -52,9 +49,13 @@ fun MainScreen(
     onSignOutClick: () -> Unit,
     auth: FirebaseAuth,
     context: MainActivity,
-    userId: String
+    userId: String,
+    SOS_Status: Boolean,
+    hideSOSFloatingButton: () -> Unit,
+    showSOSFloatingButton: () -> Unit,
+    themeViewModel: ThemeViewModel
 ){
-
+    val isDarkTheme by themeViewModel.isDarkTheme.collectAsState()
     val BottomShadowShape = GenericShape { size, _ ->
         moveTo(0f, 0f)
         lineTo(size.width, 0f)
@@ -62,11 +63,7 @@ fun MainScreen(
         lineTo(0f, size.height)
         close()
     }
-    var SOS_Status by rememberSaveable{ mutableStateOf(false)}
     var selectedIndex by rememberSaveable { mutableIntStateOf(0) }
-    val locationUtils = remember { LocationUtils(context) }
-    val apiService = remember { ApiService() }
-    val coroutineScope = rememberCoroutineScope()
 
     Scaffold(
         topBar = {
@@ -75,7 +72,7 @@ fun MainScreen(
                 .background(MaterialTheme.colorScheme.surfaceContainer)
                 ){
                 Row(
-                    modifier = modifier.fillMaxWidth().padding(horizontal = 32.dp, vertical = 16.dp),
+                    modifier = modifier.fillMaxWidth().padding(horizontal = 28.dp, vertical = 16.dp),
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
@@ -84,14 +81,35 @@ fun MainScreen(
                         contentDescription = "SK_Logo",
                         modifier = Modifier.size(44.dp)
                     )
-                    Box(modifier = Modifier.size(36.dp).clip(CircleShape).background(MaterialTheme.colorScheme.background).clickable {  },
-                        contentAlignment = Alignment.Center){
-                        Icon(
-                            painter = painterResource(R.drawable.question_mark_circled_icon),
-                            contentDescription = "Support",
-                            modifier = Modifier.size(24.dp),
-                            tint = MaterialTheme.colorScheme.primary
-                        )
+                    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.spacedBy(6.dp)){
+                        Box(
+                            modifier = Modifier.size(30.dp).clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.background).clickable { },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                painter = painterResource(R.drawable.question_mark_circled_icon),
+                                contentDescription = "Support",
+                                modifier = Modifier.size(20.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
+                        Box(
+                            modifier = Modifier.size(30.dp).clip(CircleShape)
+                                .background(MaterialTheme.colorScheme.background).clickable {
+                                    themeViewModel.toggleTheme()
+                                },
+                            contentAlignment = Alignment.Center
+                        ) {
+                            val icon:Int
+                            if(isDarkTheme) icon= R.drawable.light_mode_icon else icon=R.drawable.night_mode_icon
+                            Icon(
+                                painter = painterResource(icon),
+                                contentDescription = "Support",
+                                modifier = Modifier.size(20.dp),
+                                tint = MaterialTheme.colorScheme.primary
+                            )
+                        }
                     }
                 }
             }
@@ -105,7 +123,9 @@ fun MainScreen(
         floatingActionButton ={
             if(SOS_Status){
                 ExtendedFloatingActionButton(
-                    onClick = {SOS_Status=false},
+                    onClick = {
+                        hideSOSFloatingButton()
+                              },
                     icon = { Icon(Icons.Default.Cancel, "Stop SOS", tint = Color.Red)},
                     text = { Text("Stop SOS", color = Color.Red, fontWeight = FontWeight.SemiBold) },
                     containerColor = Color.White,
@@ -116,7 +136,7 @@ fun MainScreen(
     ) { innerPadding ->
         Box(modifier = Modifier.padding(innerPadding)) {
             when (selectedIndex) {
-                0 -> MainScreenHome(modifier, navController,auth,activateSOS={SOS_Status=true})
+                0 -> MainScreenHome(modifier, navController,auth,showSOSFloatingButton={showSOSFloatingButton()})
                 1 -> MainScreenContactRoot(modifier)
                 2 -> MainScreenProfile(onSignOutClick=onSignOutClick)
             }

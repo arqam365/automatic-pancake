@@ -20,6 +20,8 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.text.style.TextAlign
+import androidx.navigation.NavController
 import com.nextlevelprogrammers.surakshakawach.MainActivity
 import com.nextlevelprogrammers.surakshakawach.data.remote.ApiService
 import com.nextlevelprogrammers.surakshakawach.emergency_videos.VideoRecorder
@@ -36,7 +38,14 @@ import kotlinx.serialization.json.jsonPrimitive
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
-fun SOSGranted(context: Context, userId: String, authViewModel: AuthViewModel) {
+fun SOSGranted(
+    context: Context,
+    userId: String,
+    authViewModel: AuthViewModel,
+    navController: NavController,
+    hideSOSFloatingButton: () -> Unit,
+    showSOSFloatingButton: () -> Unit
+) {
     val isAuthenticated by authViewModel.isAuthenticated.collectAsState()
     val locationUtils = remember { LocationUtils(context) }
     val apiService = remember { ApiService() }
@@ -76,6 +85,7 @@ fun SOSGranted(context: Context, userId: String, authViewModel: AuthViewModel) {
                 ticketId = ticketData?.ticketId
                 ticketStatus = ticketData?.status ?: "Unknown"
                 Log.d("SOSGranted", "✅ Ticket Created: ID = $ticketId, Status = $ticketStatus")
+                showSOSFloatingButton()
             }
         }
     }
@@ -104,6 +114,8 @@ fun SOSGranted(context: Context, userId: String, authViewModel: AuthViewModel) {
                         ticketStatus = "Closed"
                         Log.d("SOSGranted", "✅ SOS Stopped & Ticket Closed")
                         authViewModel.resetAuthentication()
+                        hideSOSFloatingButton()
+                        navController.popBackStack()
                     } else {
                         Log.e("SOSGranted", "❌ Failed to Close Ticket")
                     }
@@ -122,7 +134,7 @@ fun SOSGranted(context: Context, userId: String, authViewModel: AuthViewModel) {
             verticalArrangement = Arrangement.Center,
             modifier = Modifier.fillMaxSize()
         ) {
-            Text("Status: $ticketStatus\n$locationText")
+            Text("Status: $ticketStatus\n$locationText", textAlign = TextAlign.Center)
 
             // **STOP SOS BUTTON**
             Button(onClick = {
