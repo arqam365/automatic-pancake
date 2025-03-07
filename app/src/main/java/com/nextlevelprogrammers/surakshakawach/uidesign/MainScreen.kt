@@ -116,8 +116,8 @@ fun MainScreen(
     ) { innerPadding ->
         Box(modifier = Modifier.padding(innerPadding)) {
             when (selectedIndex) {
-                0 -> MainScreenHome(Modifier, navController,auth,activateSOS={SOS_Status=true})
-                1 -> MainScreenContactRoot(Modifier)
+                0 -> MainScreenHome(modifier, navController,auth,activateSOS={SOS_Status=true})
+                1 -> MainScreenContactRoot(modifier)
                 2 -> MainScreenProfile(onSignOutClick=onSignOutClick)
             }
         }

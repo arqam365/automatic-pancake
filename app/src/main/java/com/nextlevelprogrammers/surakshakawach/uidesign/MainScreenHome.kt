@@ -66,7 +66,7 @@ fun MainScreenHome(
     val user_name = user?.displayName
     val user_profile_picture = user?.photoUrl
     var showCountDownDialog by remember{ mutableStateOf(false)}
-    Box(contentAlignment = Alignment.Center){
+    Box(contentAlignment = Alignment.Center, modifier = Modifier.padding()){
         Column(
             modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
                 .padding(top = 12.dp)
@@ -94,7 +94,7 @@ fun MainScreenHome(
                 }
             }
 
-            Box(modifier = modifier.weight(1f).fillMaxSize().padding(12.dp))
+            Box(modifier = modifier.weight(1f).fillMaxSize().padding(horizontal = 12.dp, vertical = 16.dp))
             {
                 SOSDisplay(modifier, navController,showCountDownDialog,sendSOS={showCountDownDialog=true})
             }

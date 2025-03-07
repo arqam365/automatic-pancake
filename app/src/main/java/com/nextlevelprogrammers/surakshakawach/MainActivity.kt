@@ -14,12 +14,10 @@ import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.ActivityResultLauncher
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.annotation.RequiresApi
-import androidx.compose.foundation.layout.padding
-import androidx.compose.material3.Scaffold
+import androidx.compose.material3.Surface
 import androidx.compose.ui.Modifier
 import androidx.core.content.ContextCompat
 import androidx.credentials.CredentialManager
@@ -94,10 +92,10 @@ class MainActivity : ComponentActivity() {
 
         requestPermissions()
 
-        enableEdgeToEdge()
+
         setContent {
             SurakshaKawachTheme {
-                Scaffold { innerPadding ->
+                Surface {
                     val navController = rememberNavController()
                     val startDestination = if (auth.currentUser != null) Routes.MAIN_SCREEN else Routes.GET_STARTED
 
@@ -111,7 +109,7 @@ class MainActivity : ComponentActivity() {
                         composable(Routes.MAIN_SCREEN) {
                             val userId = auth.currentUser?.uid ?: "unknown"
                             MainScreen(
-                                Modifier.padding(innerPadding),
+                                Modifier,
                                 navController = navController,
                                 onSignOutClick={signOut(navController)},
                                 auth=auth,context = this@MainActivity, userId = userId

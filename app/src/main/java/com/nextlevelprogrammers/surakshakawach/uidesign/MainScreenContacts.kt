@@ -47,7 +47,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberUpdatedState
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -66,9 +65,6 @@ import com.nextlevelprogrammers.surakshakawach.ViewModels.ContactScreenViewModel
 import com.nextlevelprogrammers.surakshakawach.data.local.AppDatabase
 import com.nextlevelprogrammers.surakshakawach.data.remote.ApiService
 import com.nextlevelprogrammers.surakshakawach.repository.ContactRepository
-import io.ktor.client.HttpClient
-import io.ktor.client.plugins.contentnegotiation.ContentNegotiation
-import io.ktor.serialization.kotlinx.json.json
 import kotlinx.coroutines.delay
 
 @Composable
@@ -107,7 +103,7 @@ fun ContactScreen(modifier: Modifier, state:ContactScreenStateValues,onAction:(C
                     text = "Emergency Contacts",
                     fontSize = 24.sp,
                     fontWeight = FontWeight.Bold,
-                    modifier = modifier.padding(bottom = 8.dp, start = 20.dp)
+                    modifier = modifier.padding(bottom = 8.dp, start = 20.dp, top = 12.dp)
                 )
                 LazyColumn(
                     modifier = Modifier.fillMaxSize(),
