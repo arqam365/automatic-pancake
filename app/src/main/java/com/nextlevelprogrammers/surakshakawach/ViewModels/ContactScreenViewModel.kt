@@ -1,11 +1,11 @@
 package com.nextlevelprogrammers.surakshakawach.ViewModels
 
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.firebase.auth.FirebaseAuth
 import com.nextlevelprogrammers.surakshakawach.IntentAction.ContactScreenAction
-import com.nextlevelprogrammers.surakshakawach.repository.ContactRepository
-import com.nextlevelprogrammers.surakshakawach.uidesign.ContactInfo
+import com.nextlevelprogrammers.surakshakawach.data.repository.ContactRepository
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.update
@@ -15,22 +15,40 @@ class ContactScreenViewModel(private val contactRepository: ContactRepository) :
     private val _state = MutableStateFlow(ContactScreenStateValues())
     val state = _state.asStateFlow()
 
-    init {
-        viewModelScope.launch {
-            val userId = FirebaseAuth.getInstance().currentUser?.uid
-            if (!userId.isNullOrEmpty()) {
-                contactRepository.fetchContactsFromApi(userId) // ✅ Fetch and store API contacts
-            }
+    private var isContactsLoaded = false
 
+    init {
+        loadContacts()
+    }
+
+    private fun loadContacts() {
+        viewModelScope.launch {
+            Log.d("ContactScreenViewModel", "Loading contacts from Room DB")
             contactRepository.getContactsFromRoom().collect { contacts ->
-                _state.update { it.copy(contactList = contacts) } // ✅ Auto-update UI
+                Log.d("ContactScreenViewModel", "Contacts loaded from Room: ${contacts.size}")
+                _state.update { it.copy(contactList = contacts) }
             }
         }
     }
 
-
     fun onAction(action: ContactScreenAction) {
+        Log.d("ContactScreenViewModel", "Action received: $action")
+
         when (action) {
+            ContactScreenAction.FetchContactsFromApi -> {
+                viewModelScope.launch {
+                    if (!isContactsLoaded) {
+                        val userId = FirebaseAuth.getInstance().currentUser?.uid
+                        if (!userId.isNullOrEmpty()) {
+                            Log.d("ContactScreenViewModel", "Fetching contacts from API")
+                            contactRepository.fetchContactsFromApi(userId)
+                            refreshContacts() // ✅ Ensure UI updates properly
+                        }
+                        isContactsLoaded = true
+                    }
+                }
+            }
+
             ContactScreenAction.OnCancelSaveContact -> {
                 _state.update { it.copy(showAddDialog = false) }
             }
@@ -44,84 +62,49 @@ class ContactScreenViewModel(private val contactRepository: ContactRepository) :
             }
 
             is ContactScreenAction.OnClickEditSave -> {
-                _state.update {
-                    it.copy(
-                        contactList = it.contactList.map { contact ->
-                            if (contact == action.contact) {
-                                contact.copy(
-                                    name = action.newName,
-                                    phone_number = action.newNumber,
-                                    email = action.newEmail,
-                                    relationship = action.newRelation
-                                )
-                            } else contact
-                        },
-                        showEditDialog = false
-                    )
+                viewModelScope.launch {
+                    Log.d("ContactScreenViewModel", "Editing contact: ${action.contact.phone_number}")
+                    contactRepository.updateContact(action.contact.copy(
+                        name = action.newName,
+                        phone_number = action.newNumber,
+                        email = action.newEmail,
+                        relationship = action.newRelation
+                    ))
+                    _state.update { it.copy(showEditDialog = false) }
+                    refreshContacts()
                 }
             }
 
             is ContactScreenAction.OnClickSaveContact -> {
                 viewModelScope.launch {
-                    try {
-                        val userId = FirebaseAuth.getInstance().currentUser?.uid
-                        if (userId.isNullOrEmpty()) {
-                            println("❌ Error: User is not logged in or UID is null!") // Debug Log
-                            return@launch
-                        }
-                        if (userId.isBlank()) {
-                            println("❌ Error: User is not logged in!") // Debug Log
-                            return@launch
-                        }
-
-                        println("🔍 Saving Contact for User ID: $userId") // Debug Log
-
-                        contactRepository.addContactToApi(userId, action.contact) // ✅ Save to API
-                        contactRepository.saveContactToRoom(action.contact) // ✅ Save to Room DB
-
-                        _state.update {
-                            it.copy(
-                                contactList = it.contactList + action.contact,
-                                showAddDialog = false
-                            )
-                        }
-                    } catch (e: Exception) {
-                        println("❌ Error saving contact: ${e.localizedMessage}") // Debug Log
-                        e.printStackTrace()
+                    val userId = FirebaseAuth.getInstance().currentUser?.uid
+                    if (!userId.isNullOrEmpty()) {
+                        Log.d("ContactScreenViewModel", "Saving new contact: ${action.contact.phone_number}")
+                        contactRepository.saveContactToRoomAndSync(action.contact, userId)
+                        refreshContacts()
                     }
                 }
             }
 
             is ContactScreenAction.OnSwipeContactDelete -> {
                 viewModelScope.launch {
-                    try {
-                        val userId = FirebaseAuth.getInstance().currentUser?.uid
-                        if (userId.isNullOrEmpty()) {
-                            println("❌ User is not logged in!")
-                            return@launch
-                        }
+                    val userId = FirebaseAuth.getInstance().currentUser?.uid
+                    if (!userId.isNullOrEmpty()) {
+                        try {
+                            Log.d("ContactScreenViewModel", "Deleting contact: ${action.contact.phone_number}")
+                            val isDeleted = contactRepository.deleteContact(action.contact, userId)
 
-                        // ✅ Step 1: Delete from Backend API
-                        val isDeletedFromAPI = contactRepository.deleteContactFromApi(userId, action.contact.phone_number)
-
-                        if (isDeletedFromAPI) {
-                            // ✅ Step 2: Delete from Room DB
-                            contactRepository.deleteContact(action.contact)
-
-                            // ✅ Step 3: Update UI State
-                            _state.update {
-                                it.copy(
-                                    contactList = it.contactList.filterNot { contact ->
-                                        contact.phone_number == action.contact.phone_number
-                                    }
-                                )
+                            if (isDeleted) {
+                                Log.d("ContactScreenViewModel", "✅ Contact deleted and refreshing UI")
+                                refreshContacts() // ✅ Ensure UI updates after deletion
+                            } else {
+                                Log.e("ContactScreenViewModel", "❌ Contact deletion failed")
                             }
-                            println("✅ Contact deleted from backend and Room")
-                        } else {
-                            println("❌ Failed to delete contact from backend")
+                        } catch (e: Exception) {
+                            Log.e("ContactScreenViewModel", "❌ Error deleting contact: ${e.localizedMessage}")
                         }
-                    } catch (e: Exception) {
-                        println("❌ Error deleting contact: ${e.localizedMessage}")
+                    } else {
+                        Log.e("ContactScreenViewModel", "❌ Cannot delete contact: User not logged in")
                     }
                 }
             }
@@ -133,6 +116,16 @@ class ContactScreenViewModel(private val contactRepository: ContactRepository) :
                         showEditDialog = true
                     )
                 }
+            }
+        }
+    }
+
+    private fun refreshContacts() {
+        viewModelScope.launch {
+            Log.d("ContactScreenViewModel", "Refreshing contacts from Room DB")
+            contactRepository.getContactsFromRoom().collect { contacts ->
+                Log.d("ContactScreenViewModel", "Updated contact list: ${contacts.size}")
+                _state.update { it.copy(contactList = contacts) }
             }
         }
     }

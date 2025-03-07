@@ -71,7 +71,7 @@ class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.Q)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val authViewModel = ViewModelProvider(this).get(AuthViewModel::class.java)
+        val authViewModel = ViewModelProvider(this)[AuthViewModel::class.java]
 
         sharedPreferences = getSharedPreferences("AppPrefs", Context.MODE_PRIVATE)
 

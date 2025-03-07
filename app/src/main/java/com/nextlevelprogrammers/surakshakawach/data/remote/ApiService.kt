@@ -57,21 +57,21 @@ class ApiService() {
         }
     }
 
-    suspend fun addContact(userId: String, contact: ContactRequest): ContactResponse? {
+    suspend fun addContact(userId: String, contact: ContactRequest): ApiResponse<ContactResponse>? {
         return try {
-            println("🔍 Sending ContactRequest for user: $userId with data: $contact") // Debugging Log
+            println("🔍 Sending ContactRequest for user: $userId with data: $contact")
 
             val response: HttpResponse = client.post("$BASE_URL/v2/user/$userId/contacts/") {
-                contentType(io.ktor.http.ContentType.Application.Json)
+                contentType(ContentType.Application.Json)
                 setBody(contact)
             }
 
-            if (response.status.value in 200..299) {
+            if (response.status.isSuccess()) {
                 val apiResponse: ApiResponse<ContactResponse> = response.body()
                 println("✅ Contact successfully created(API): ${apiResponse.data}")
-                apiResponse.data // ✅ Return only the `data` part of the response
+                apiResponse // ✅ Return full response
             } else {
-                val errorBody = response.body<String>() // Capture error details
+                val errorBody = response.body<String>()
                 println("❌ API responded with error: ${response.status} - $errorBody")
                 null
             }
