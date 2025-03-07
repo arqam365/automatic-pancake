@@ -2,7 +2,7 @@ package com.nextlevelprogrammers.surakshakawach.ViewModels
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
-import com.nextlevelprogrammers.surakshakawach.repository.ContactRepository
+import com.nextlevelprogrammers.surakshakawach.data.repository.ContactRepository
 
 class ContactScreenViewModelFactory(private val contactRepository: ContactRepository) :
     ViewModelProvider.Factory {

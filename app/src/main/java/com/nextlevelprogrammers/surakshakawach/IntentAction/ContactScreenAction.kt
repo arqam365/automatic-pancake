@@ -11,4 +11,6 @@ sealed interface ContactScreenAction {
     data class OnSwipeContactEdit(val contact: ContactInfo): ContactScreenAction
     data class OnClickEditSave(val contact: ContactInfo, val newName:String, val newNumber: String, val newEmail:String, val newRelation:String): ContactScreenAction
     data object OnClickEditCancel : ContactScreenAction
+
+    data object FetchContactsFromApi : ContactScreenAction
 }

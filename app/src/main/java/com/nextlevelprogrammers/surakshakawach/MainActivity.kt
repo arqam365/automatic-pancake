@@ -79,10 +79,7 @@ class MainActivity : ComponentActivity() {
     @RequiresApi(Build.VERSION_CODES.Q)
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        ////Theme Manager
-
-
+        
         val authViewModel = ViewModelProvider(this).get(AuthViewModel::class.java)
 
 

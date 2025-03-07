@@ -6,16 +6,7 @@ import androidx.compose.animation.core.tween
 import androidx.compose.animation.fadeOut
 import androidx.compose.animation.shrinkVertically
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.Row
-import androidx.compose.foundation.layout.Spacer
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.fillMaxWidth
-import androidx.compose.foundation.layout.height
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -24,32 +15,9 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowDropDown
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material3.AlertDialog
-import androidx.compose.material3.Button
-import androidx.compose.material3.DropdownMenu
-import androidx.compose.material3.DropdownMenuItem
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.ExposedDropdownMenuAnchorType
-import androidx.compose.material3.ExposedDropdownMenuBox
-import androidx.compose.material3.FloatingActionButton
-import androidx.compose.material3.Icon
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.SwipeToDismissBox
-import androidx.compose.material3.SwipeToDismissBoxState
-import androidx.compose.material3.SwipeToDismissBoxValue
-import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
-import androidx.compose.material3.rememberSwipeToDismissBoxState
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
+import androidx.compose.ui.*
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
@@ -64,39 +32,37 @@ import com.nextlevelprogrammers.surakshakawach.ViewModels.ContactScreenViewModel
 import com.nextlevelprogrammers.surakshakawach.ViewModels.ContactScreenViewModelFactory
 import com.nextlevelprogrammers.surakshakawach.data.local.AppDatabase
 import com.nextlevelprogrammers.surakshakawach.data.remote.ApiService
-import com.nextlevelprogrammers.surakshakawach.repository.ContactRepository
+import com.nextlevelprogrammers.surakshakawach.data.repository.ContactRepository
 import kotlinx.coroutines.delay
 
 @Composable
 fun MainScreenContactRoot(modifier: Modifier) {
     val context = LocalContext.current
-
     val database = remember { AppDatabase.getDatabase(context) }
     val contactDao = remember { database.contactDao() }
-    val apiService = remember {
-        ApiService()
-    }
-
+    val apiService = remember { ApiService() }
     val contactRepository = remember { ContactRepository(apiService, contactDao) }
     val viewModel: ContactScreenViewModel = viewModel(
         factory = ContactScreenViewModelFactory(contactRepository)
     )
-
     val state by viewModel.state.collectAsStateWithLifecycle()
+
+
+    LaunchedEffect(Unit) {
+        viewModel.onAction(ContactScreenAction.FetchContactsFromApi) // ✅ Fetch from API & store in Room
+    }
+
+
     ContactScreen(modifier = modifier, state = state, onAction = viewModel::onAction)
 }
 
 @Composable
-fun ContactScreen(modifier: Modifier, state:ContactScreenStateValues,onAction:(ContactScreenAction)->Unit) {
-
+fun ContactScreen(modifier: Modifier, state: ContactScreenStateValues, onAction: (ContactScreenAction) -> Unit) {
     Scaffold(floatingActionButton = {
-        FloatingActionButton(
-            onClick = {onAction(ContactScreenAction.OnClickAddContact)},
-
-            ){
+        FloatingActionButton(onClick = { onAction(ContactScreenAction.OnClickAddContact) }) {
             Icon(Icons.Default.Add, contentDescription = "Add")
         }
-    }) {innerPadding->
+    }) { innerPadding ->
         Box(modifier = modifier.fillMaxSize().padding(innerPadding)) {
             Column(modifier = modifier.fillMaxSize()) {
                 Text(
@@ -112,7 +78,7 @@ fun ContactScreen(modifier: Modifier, state:ContactScreenStateValues,onAction:(C
                 ) {
                     itemsIndexed(
                         items = state.contactList,
-                        key = { index, contact -> "${contact.phone_number}_$index" } // ✅ Ensure unique key
+                        key = { index, contact -> "${contact.phone_number}_$index" }
                     ) { _, contact ->
                         SwipeContainer(
                             item = contact,
@@ -124,29 +90,22 @@ fun ContactScreen(modifier: Modifier, state:ContactScreenStateValues,onAction:(C
                 }
             }
 
-
-            // Show edit dialog if needed
             state.currentContact?.let { contact ->
                 if (state.showEditDialog) {
-                    EditContactDialog(
-                        contact = contact,
-                        onAction =onAction
-                    )
+                    EditContactDialog(contact = contact, onAction = onAction)
                 }
             }
-            //Add Contact Dialog Box
-            if(state.showAddDialog){
+            if (state.showAddDialog) {
                 AddContact(state.showAddDialog, onAction)
             }
         }
     }
-
-
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddContact(showAddDialog: Boolean, onAction: (ContactScreenAction) -> Unit) {
+    var contact_id by remember { mutableStateOf("") }
     var name by remember { mutableStateOf("") }
     var number by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
@@ -198,7 +157,7 @@ fun AddContact(showAddDialog: Boolean, onAction: (ContactScreenAction) -> Unit) 
                             label = { Text("Relationship") },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .menuAnchor(ExposedDropdownMenuAnchorType.PrimaryEditable, enabled = true), // ✅ Corrected here
+                                .menuAnchor(), // ✅ This is required for dropdown to expand
                             trailingIcon = {
                                 Icon(
                                     imageVector = Icons.Default.ArrowDropDown,
@@ -215,8 +174,8 @@ fun AddContact(showAddDialog: Boolean, onAction: (ContactScreenAction) -> Unit) 
                                 DropdownMenuItem(
                                     text = { Text(option) },
                                     onClick = {
-                                        relationship = option
-                                        expanded = false
+                                        relationship = option // ✅ Set selected value
+                                        expanded = false // ✅ Close dropdown
                                     }
                                 )
                             }
@@ -232,7 +191,7 @@ fun AddContact(showAddDialog: Boolean, onAction: (ContactScreenAction) -> Unit) 
                         } else {
                             onAction(
                                 ContactScreenAction.OnClickSaveContact(
-                                    ContactInfo(name, number, email, relationship)
+                                    ContactInfo(contact_id, name, number, email, relationship)
                                 )
                             )
                         }
@@ -252,20 +211,15 @@ fun AddContact(showAddDialog: Boolean, onAction: (ContactScreenAction) -> Unit) 
 
 @Composable
 fun ContactCard(modifier: Modifier = Modifier, contact: ContactInfo) {
-    Box(
-        modifier = modifier
-            .fillMaxWidth()
-    ) {
-        Column(modifier=modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background)
-            .clip(RoundedCornerShape(4.dp))
-        ) {
-            Text(text = contact.name, modifier.padding(start = 6.dp))
-            Text(text = contact.phone_number, modifier.padding(start = 6.dp))
-            Text(text = contact.email, modifier.padding(start = 6.dp), color = MaterialTheme.colorScheme.primary)
+    Box(modifier = modifier.fillMaxWidth()) {
+        Column(modifier = modifier.fillMaxWidth().background(MaterialTheme.colorScheme.background)
+            .clip(RoundedCornerShape(4.dp))) {
+            Text(text = contact.name, modifier = Modifier.padding(start = 6.dp))
+            Text(text = contact.phone_number, modifier = Modifier.padding(start = 6.dp))
+            Text(text = contact.email, modifier = Modifier.padding(start = 6.dp), color = MaterialTheme.colorScheme.primary)
         }
     }
 }
-
 
 @Composable
 fun SwipeContainer(
@@ -274,7 +228,6 @@ fun SwipeContainer(
     animationDuration: Int = 500,
     content: @Composable (ContactInfo) -> Unit
 ) {
-
     var isRemoved by remember { mutableStateOf(false) }
     val state = rememberSwipeToDismissBoxState(
         confirmValueChange = { value ->

@@ -6,6 +6,7 @@ import com.nextlevelprogrammers.surakshakawach.uidesign.ContactInfo
 // Convert Room Database Entity to ContactInfo
 fun ContactEntity.toContactInfo(): ContactInfo {
     return ContactInfo(
+        contact_id = this.contact_id, // ✅ Ensure API ID is stored
         name = this.name,
         phone_number = this.phone_number,
         email = this.email,
@@ -16,16 +17,18 @@ fun ContactEntity.toContactInfo(): ContactInfo {
 // Convert API Response to ContactInfo
 fun ContactResponse.toContactInfo(): ContactInfo {
     return ContactInfo(
+        contact_id = this.contact_id, // ✅ Store API contact ID
         name = this.name,
         phone_number = this.phone_number,
         email = this.email ?: "",
-        relationship = this.relationship.toString()
+        relationship = this.relationship ?: "" // ✅ Prevent null issues
     )
 }
 
 // Convert ContactInfo to Room Entity
 fun ContactInfo.toContactEntity(): ContactEntity {
     return ContactEntity(
+        contact_id = this.contact_id, // ✅ Ensure correct ID is stored
         name = this.name,
         phone_number = this.phone_number,
         email = this.email,
