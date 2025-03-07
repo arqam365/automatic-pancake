@@ -99,7 +99,7 @@ class ContactRepository(
                     return@withContext false
                 }
 
-                val isDeletedFromAPI = apiService.deleteContact(userId, contact.phone_number) // ✅ Use Contact ID
+                val isDeletedFromAPI = apiService.deleteContact(userId, contact.contact_id) // ✅ Use Contact ID
 
                 if (isDeletedFromAPI) {
                     contactDao.deleteContact(contact.toContactEntity()) // ✅ Delete from Room
