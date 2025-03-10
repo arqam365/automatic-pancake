@@ -169,6 +169,7 @@ suspend fun stopSOS(
     }
 
     // 1️⃣ **Stop Recording**
+    Log.d("stopSOS", "🛑 Stopping video recording")
     videoRecorder.stopRecording()
 
     // 2️⃣ **Stop Location Updates**
@@ -176,6 +177,14 @@ suspend fun stopSOS(
 
     // 3️⃣ **Call Close Ticket API**
     val isClosed = apiService.closeTicket(userId, ticketId)
+
+    if (isClosed) {
+        Log.d("stopSOS", "✅ SOS ticket closed successfully")
+        videoRecorder.closeCamera() // ✅ Properly stop camera service
+    } else {
+        Log.e("stopSOS", "❌ Failed to close SOS ticket")
+    }
+
     onComplete(isClosed)
 }
 

@@ -18,63 +18,80 @@ import kotlinx.coroutines.tasks.await
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.*
+import java.util.concurrent.ExecutorService
+import java.util.concurrent.Executors
 
 class VideoRecorder(private val context: Context) {
 
     private var videoCapture: VideoCapture<Recorder>? = null
     private var currentRecording: Recording? = null
+    private var cameraProvider: ProcessCameraProvider? = null
+    private var isRecordingActive = false
     private val storageReference: StorageReference =
         FirebaseStorage.getInstance("gs://suraksha-kawach-151024-v2-development")
             .reference.child("emergency_videos")
-    private var isRecordingActive = true
+    private val cameraExecutor: ExecutorService = Executors.newSingleThreadExecutor()
 
     /**
-     * Initializes CameraX and sets up Video Capture in SD quality.
+     * ✅ Initializes CameraX and sets up Video Capture in HD quality.
      */
     fun initializeCamera() {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
         cameraProviderFuture.addListener({
-            val cameraProvider = cameraProviderFuture.get()
+            try {
+                cameraProvider = cameraProviderFuture.get()
+                val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
 
-            val qualitySelector = QualitySelector.from(Quality.SD)
-            val recorder = Recorder.Builder()
-                .setQualitySelector(qualitySelector)
-                .build()
+                val qualitySelector = QualitySelector.from(Quality.SD)
 
-            videoCapture = VideoCapture.withOutput(recorder)
+                val recorder = Recorder.Builder()
+                    .setQualitySelector(qualitySelector)
+                    .setExecutor(cameraExecutor) // ✅ Set executor for threading
+                    .build()
 
-            val cameraSelector = CameraSelector.DEFAULT_BACK_CAMERA
-            cameraProvider.unbindAll()
-            cameraProvider.bindToLifecycle(
-                context as androidx.lifecycle.LifecycleOwner,
-                cameraSelector,
-                videoCapture
-            )
+                videoCapture = VideoCapture.withOutput(recorder)
 
-            Log.d("VideoRecorder", "✅ CameraX Initialized with SD Quality")
+                cameraProvider?.unbindAll()
+                cameraProvider?.bindToLifecycle(
+                    context as androidx.lifecycle.LifecycleOwner,
+                    cameraSelector,
+                    videoCapture
+                )
+
+                Log.d("VideoRecorder", "✅ CameraX Initialized Successfully")
+
+            } catch (e: Exception) {
+                Log.e("VideoRecorder", "❌ Camera Initialization Failed: ${e.localizedMessage}")
+            }
         }, ContextCompat.getMainExecutor(context))
     }
 
     /**
-     * Starts continuous video recording: 15s recording, then 10s gap.
+     * ✅ Starts continuous video recording with 60s recording, then 10s break.
      */
     fun startContinuousRecording(onVideoUploaded: (String, String) -> Unit) {
+        isRecordingActive = true
         CoroutineScope(Dispatchers.IO).launch {
             while (isRecordingActive) {
                 val videoFile = startVideoRecording() ?: continue
-                delay(15000) // 🎥 Record for 15 seconds
+                delay(60000) // 🎥 Record for 60 seconds
 
                 stopVideoRecording(videoFile) { uploadedUrl, bucketUrl ->
-                    onVideoUploaded(uploadedUrl, bucketUrl)
+                    if (uploadedUrl.isEmpty()) {
+                        Log.e("VideoRecorder", "❌ Video upload failed, stopping continuous recording.")
+                        stopRecording()
+                    } else {
+                        onVideoUploaded(uploadedUrl, bucketUrl)
+                    }
                 }
 
-                delay(10000) // ⏳ Wait for 10 seconds before the next recording
+                delay(10000) // ⏳ Wait before the next recording
             }
         }
     }
 
     /**
-     * ✅ Checks Camera and Audio Permissions
+     * ✅ Checks if Camera and Audio permissions are granted.
      */
     private fun hasCameraPermission(): Boolean {
         return ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
@@ -93,6 +110,11 @@ class VideoRecorder(private val context: Context) {
             return null
         }
 
+        if (videoCapture == null) {
+            Log.e("VideoRecorder", "❌ VideoCapture not initialized!")
+            return null
+        }
+
         val outputFile = createVideoFile()
         val outputOptions = FileOutputOptions.Builder(outputFile).build()
 
@@ -100,8 +122,9 @@ class VideoRecorder(private val context: Context) {
             ?.prepareRecording(context, outputOptions)
             ?.withAudioEnabled()
             ?.start(ContextCompat.getMainExecutor(context)) { event ->
-                if (event is VideoRecordEvent.Start) {
-                    Log.d("VideoRecorder", "🎥 Recording Started")
+                when (event) {
+                    is VideoRecordEvent.Start -> Log.d("VideoRecorder", "🎥 Recording Started")
+                    else -> Log.e("VideoRecorder", "❌ Unexpected Event: $event")
                 }
             }
 
@@ -109,7 +132,7 @@ class VideoRecorder(private val context: Context) {
     }
 
     /**
-     * ✅ Stops recording correctly and uploads video to Firebase.
+     * ✅ Stops recording and uploads video to Firebase.
      */
     private fun stopVideoRecording(file: File, onUploaded: (String, String) -> Unit) {
         currentRecording?.stop()
@@ -134,30 +157,48 @@ class VideoRecorder(private val context: Context) {
     /**
      * ✅ Uploads recorded video to Firebase Storage.
      */
-    private suspend fun uploadVideoToFirebase(file: File, onUploaded: (String, String) -> Unit) {
+    private suspend fun uploadVideoToFirebase(
+        file: File,
+        onUploaded: (String, String) -> Unit
+    ) {
         val fileName = file.name
         val storageReference = storageReference.child(fileName)
 
-        // ✅ Ensure user is authenticated before uploading
         val user = FirebaseAuth.getInstance().currentUser
         if (user == null) {
             Log.e("FirebaseUpload", "❌ Upload Failed: User is not authenticated!")
             return
         }
 
-        try {
-            Log.d("FirebaseUpload", "Uploading file: $fileName to Firebase Storage")
+        var retryCount = 0
+        val maxRetries = 3
 
-            storageReference.putFile(Uri.fromFile(file)).await()
-            val downloadUrl = storageReference.downloadUrl.await().toString()
-            val bucketUrl = "gs://suraksha-kawach-151024-v2-development/emergency_videos/$fileName"
+        while (retryCount < maxRetries) {
+            try {
+                Log.d("FirebaseUpload", "🔄 Attempt ${retryCount + 1}: Uploading file: $fileName")
 
-            Log.d("FirebaseUpload", "✅ File Uploaded Successfully: $downloadUrl")
+                storageReference.putFile(Uri.fromFile(file)).await()
+                val downloadUrl = storageReference.downloadUrl.await().toString()
+                val bucketUrl = "gs://suraksha-kawach-151024-v2-development/emergency_videos/$fileName"
 
-            onUploaded(downloadUrl, bucketUrl)
-            file.delete() // ✅ Delete local file after successful upload
-        } catch (e: Exception) {
-            Log.e("FirebaseUpload", "❌ Upload Failed: ${e.localizedMessage}")
+                Log.d("FirebaseUpload", "✅ File Uploaded Successfully: $downloadUrl")
+
+                onUploaded(downloadUrl, bucketUrl)
+                file.delete() // ✅ Delete local file after successful upload
+                return
+
+            } catch (e: Exception) {
+                retryCount++
+                Log.e("FirebaseUpload", "❌ Upload Failed: ${e.localizedMessage} (Attempt $retryCount)")
+
+                if (retryCount >= maxRetries) {
+                    Log.e("FirebaseUpload", "🚨 Max retries reached. Stopping video recording.")
+                    stopRecording()
+                    return
+                }
+
+                delay(2000L * retryCount) // ⏳ Exponential backoff before retrying
+            }
         }
     }
 
@@ -167,5 +208,18 @@ class VideoRecorder(private val context: Context) {
     fun stopRecording() {
         isRecordingActive = false
         Log.d("VideoRecorder", "⛔ Stopped Continuous Recording")
+    }
+
+    /**
+     * ✅ Unbinds camera and releases resources.
+     */
+    fun closeCamera() {
+        Log.d("VideoRecorder", "🛑 Closing CameraX Service")
+        stopRecording()
+        currentRecording?.close()
+        cameraProvider?.unbindAll()
+        videoCapture = null
+        cameraProvider = null
+        Log.d("VideoRecorder", "✅ CameraX Service Closed Successfully")
     }
 }
