@@ -82,6 +82,7 @@ class ContactScreenViewModel(private val contactRepository: ContactRepository) :
                         Log.d("ContactScreenViewModel", "Saving new contact: ${action.contact.phone_number}")
                         contactRepository.saveContactToRoomAndSync(action.contact, userId)
                         refreshContacts()
+                        _state.update { it.copy() }
                     }
                 }
             }
@@ -97,6 +98,7 @@ class ContactScreenViewModel(private val contactRepository: ContactRepository) :
                             if (isDeleted) {
                                 Log.d("ContactScreenViewModel", "✅ Contact deleted and refreshing UI")
                                 refreshContacts() // ✅ Ensure UI updates after deletion
+                                _state.update { it.copy() }
                             } else {
                                 Log.e("ContactScreenViewModel", "❌ Contact deletion failed")
                             }

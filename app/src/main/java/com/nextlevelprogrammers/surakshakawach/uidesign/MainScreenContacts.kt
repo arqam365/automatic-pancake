@@ -84,7 +84,9 @@ fun MainScreenContactRoot(modifier: Modifier) {
     }
 
 
-    ContactScreen(modifier = modifier, state = state, onAction = viewModel::onAction)
+    ContactScreen(modifier = modifier, state = state, onAction = { action ->
+        viewModel.onAction(action) })
+
 }
 
 @Composable
@@ -94,6 +96,7 @@ fun ContactScreen(modifier: Modifier, state: ContactScreenStateValues, onAction:
             Icon(Icons.Default.Add, contentDescription = "Add")
         }
     }) { innerPadding ->
+
         Box(modifier = modifier.fillMaxSize().padding(innerPadding)) {
             Column(modifier = modifier.fillMaxSize()) {
                 Text(
@@ -109,7 +112,7 @@ fun ContactScreen(modifier: Modifier, state: ContactScreenStateValues, onAction:
                 ) {
                     itemsIndexed(
                         items = state.contactList,
-                        key = { index, contact -> "${contact.phone_number}_$index" }
+                        key = { index, contact -> contact.contact_id  }
                     ) { _, contact ->
                         SwipeContainer(
                             item = contact,
@@ -285,7 +288,7 @@ fun SwipeContainer(
     }
 
     AnimatedVisibility(
-        visible = !isRemoved,
+        visible = !isRemoved && item.name.isNotEmpty(),
         exit = shrinkVertically(animationSpec = tween(durationMillis = animationDuration)) + fadeOut()
     ) {
         SwipeToDismissBox(
