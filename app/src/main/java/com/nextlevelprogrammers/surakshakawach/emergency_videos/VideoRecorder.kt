@@ -3,9 +3,17 @@ package com.nextlevelprogrammers.surakshakawach.emergency_videos
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
+import android.hardware.camera2.CameraCharacteristics
 import android.net.Uri
+import android.os.Build
 import android.os.Environment
 import android.util.Log
+import androidx.annotation.OptIn
+import androidx.annotation.RequiresApi
+import androidx.camera.camera2.interop.Camera2CameraInfo
+import androidx.camera.camera2.interop.Camera2Interop
+import androidx.camera.camera2.interop.ExperimentalCamera2Interop
+import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.video.*
@@ -33,8 +41,10 @@ class VideoRecorder(private val context: Context) {
     private val cameraExecutor: ExecutorService = Executors.newSingleThreadExecutor()
 
     /**
-     * ✅ Initializes CameraX and sets up Video Capture in HD quality.
+     * ✅ Initializes CameraX and sets up Video Capture in SD quality.
      */
+    @OptIn(ExperimentalCamera2Interop::class)
+    @RequiresApi(Build.VERSION_CODES.P) // Ensure this is only used in API 28+
     fun initializeCamera() {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
         cameraProviderFuture.addListener({
@@ -64,6 +74,21 @@ class VideoRecorder(private val context: Context) {
                 Log.e("VideoRecorder", "❌ Camera Initialization Failed: ${e.localizedMessage}")
             }
         }, ContextCompat.getMainExecutor(context))
+    }
+
+    /**
+     * ✅ Retrieves CameraCharacteristics using reflection to bypass API restrictions.
+     */
+    @OptIn(ExperimentalCamera2Interop::class)
+    private fun getCameraCharacteristics(cameraInfo: CameraInfo): CameraCharacteristics? {
+        return try {
+            val method = Camera2CameraInfo::class.java.getDeclaredMethod("extractCameraCharacteristics", CameraInfo::class.java)
+            method.isAccessible = true
+            method.invoke(null, cameraInfo) as? CameraCharacteristics
+        } catch (e: Exception) {
+            Log.e("CameraX", "❌ Failed to get CameraCharacteristics: ${e.localizedMessage}")
+            null
+        }
     }
 
     /**
@@ -123,8 +148,19 @@ class VideoRecorder(private val context: Context) {
             ?.withAudioEnabled()
             ?.start(ContextCompat.getMainExecutor(context)) { event ->
                 when (event) {
-                    is VideoRecordEvent.Start -> Log.d("VideoRecorder", "🎥 Recording Started")
-                    else -> Log.e("VideoRecorder", "❌ Unexpected Event: $event")
+                    is VideoRecordEvent.Start -> {
+                        Log.d("VideoRecorder", "🎥 Recording Started")
+                    }
+                    is VideoRecordEvent.Finalize -> {
+                        Log.d("VideoRecorder", "✅ Recording Finalized")
+                    }
+                    is VideoRecordEvent.Status -> {
+                        // 🔧 Instead of logging as an error, handle it properly
+                        Log.d("VideoRecorder", "ℹ Recording Status Update: ${event.recordingStats}")
+                    }
+                    else -> {
+                        Log.e("VideoRecorder", "❌ Unknown Event: ${event.javaClass.simpleName}")
+                    }
                 }
             }
 

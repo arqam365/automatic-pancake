@@ -5,6 +5,8 @@ plugins {
     alias(libs.plugins.google.gms.google.services) // ✅ Google Services Plugin
     id("com.google.devtools.ksp") // ✅ Kotlin Symbol Processing
     kotlin("plugin.serialization") version "1.9.0"
+    id("com.google.firebase.crashlytics")
+    id ("com.google.firebase.firebase-perf")
 }
 
 android {
@@ -42,7 +44,7 @@ android {
         viewBinding = true
         dataBinding = true
     }
-    packagingOptions {
+    packaging {
         resources {
             excludes += "META-INF/DEPENDENCIES"
         }
@@ -67,6 +69,7 @@ dependencies {
     implementation(libs.firebase.messaging.ktx)
     implementation(libs.play.services.auth) // ✅ Fixes missing CredentialsOptions.Builder
     implementation("com.google.firebase:firebase-storage-ktx:20.2.1")
+    implementation("com.google.firebase:firebase-analytics")
 
     // ✅ Jetpack Navigation
     implementation(libs.androidx.navigation.compose)
