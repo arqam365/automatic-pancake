@@ -55,10 +55,15 @@ fun SOSGranted(
     var ticketStatus by remember { mutableStateOf("Pending") }
     val coroutineScope = rememberCoroutineScope()
 
-    LaunchedEffect(Unit) {
-        videoRecorder.initializeCamera()
 
-        videoRecorder.startContinuousRecording() { videoUrl, bucketUrl ->
+    LaunchedEffect(Unit) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
+            videoRecorder.initializeCamera() // ✅ Only call if API is 28+
+        } else {
+            Log.e("SOSGranted", "❌ Camera2 Ultra-Wide is not supported below API 28, using Default Camera.")
+        }
+
+        videoRecorder.startContinuousRecording { videoUrl, bucketUrl ->
             Log.d("SOSGranted", "✅ Video Uploaded, Sending to API")
 
             ticketId?.let { ticket ->
