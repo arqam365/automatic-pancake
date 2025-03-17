@@ -10,6 +10,7 @@ import com.nextlevelprogrammers.surakshakawach.model.ContactRequest
 import com.nextlevelprogrammers.surakshakawach.model.ContactResponse
 import com.nextlevelprogrammers.surakshakawach.model.LocationUpdateRequest
 import com.nextlevelprogrammers.surakshakawach.model.SOSRequest
+import com.nextlevelprogrammers.surakshakawach.model.SOSResponse
 import com.nextlevelprogrammers.surakshakawach.model.VideoRequest
 import com.nextlevelprogrammers.surakshakawach.model.VideoResponse
 import io.ktor.client.HttpClient
@@ -21,12 +22,15 @@ import io.ktor.client.request.post
 import io.ktor.client.request.put
 import io.ktor.client.request.setBody
 import io.ktor.client.statement.HttpResponse
+import io.ktor.client.statement.bodyAsText
 import io.ktor.http.ContentType
 import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
 import java.time.Instant
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
 import java.util.UUID
 
 class ApiService() {
@@ -130,28 +134,45 @@ class ApiService() {
     }
 
     @RequiresApi(Build.VERSION_CODES.O)
-    suspend fun createSOS(userId: String, latitude: Double, longitude: Double): HttpResponse {
+    suspend fun createSOS(userId: String, latitude: Double, longitude: Double): SOSResponse {
+        // 🔥 Fix starts here
+        val createdAtFormatted = ZonedDateTime.now()
+            .minusSeconds(1) // Optional: 1-second buffer
+            .withNano(0) // Remove nanoseconds
+            .format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
+
         val requestBody = SOSRequest(
             latitude = latitude,
             longitude = longitude,
-            created_at = Instant.now().toString()
+            created_at = createdAtFormatted // Fixed timestamp
         )
 
         val url = "$BASE_URL/v2/user/$userId/ticket/"
 
-        return client.post(url) {
+        val response = client.post(url) {
             contentType(ContentType.Application.Json)
             setBody(requestBody)
         }
+
+        val rawBody = response.bodyAsText()
+        Log.d("ApiService", "Raw Response: $rawBody")
+
+        return Json.decodeFromString<SOSResponse>(rawBody)
     }
 
 
     @RequiresApi(Build.VERSION_CODES.O)
     suspend fun updateLocation(userId: String, ticketId: String, latitude: Double, longitude: Double): HttpResponse {
+
+        val createdAtFormatted = ZonedDateTime.now()
+            .minusSeconds(1) // Optional: 1-second buffer
+            .withNano(0) // Remove nanoseconds
+            .format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
+
         val requestBody = LocationUpdateRequest(
             latitude = latitude,
             longitude = longitude,
-            created_at = Instant.now().toString()
+            created_at = createdAtFormatted
         )
 
         val url = "$BASE_URL/v2/user/$userId/ticket/$ticketId/location"
@@ -165,11 +186,17 @@ class ApiService() {
     @RequiresApi(Build.VERSION_CODES.O)
     suspend fun uploadVideo(userId: String, ticketId: String, videoUrl: String, bucketUrl: String): VideoResponse? {
         return try {
+
+            val createdAtFormatted = ZonedDateTime.now()
+                .minusSeconds(1) // Optional: 1-second buffer
+                .withNano(0) // Remove nanoseconds
+                .format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
+
             val requestBody = VideoRequest(
                 video_id = UUID.randomUUID().toString(),
                 video_url = videoUrl,
                 bucket_url = bucketUrl,
-                created_at = Instant.now().toString()
+                created_at = createdAtFormatted
             )
 
             val url = "$BASE_URL/v2/user/$userId/ticket/$ticketId/video"

@@ -318,7 +318,7 @@ class MainActivity : ComponentActivity() {
 
 
     //Location
-
+/**Use for permission request*/
     private fun requestPermissions() {
         val permissions = arrayOf(
             Manifest.permission.CAMERA,
