@@ -134,7 +134,7 @@ class ApiService() {
         val requestBody = SOSRequest(
             latitude = latitude,
             longitude = longitude,
-            created_at = Instant.now().toString()
+            created_at = Instant.now().minusSeconds(5).toString()
         )
 
         val url = "$BASE_URL/v2/user/$userId/ticket/"

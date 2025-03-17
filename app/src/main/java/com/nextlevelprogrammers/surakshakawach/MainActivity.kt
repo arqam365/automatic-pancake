@@ -48,6 +48,7 @@ import com.google.firebase.messaging.FirebaseMessaging
 import com.nextlevelprogrammers.surakshakawach.data.remote.ApiService
 import com.nextlevelprogrammers.surakshakawach.deviceadmin.MyDeviceAdminReceiver
 import com.nextlevelprogrammers.surakshakawach.model.AuthRequest
+import com.nextlevelprogrammers.surakshakawach.service.SOSForegroundService
 import com.nextlevelprogrammers.surakshakawach.ui.theme.SurakshaKawachTheme
 import com.nextlevelprogrammers.surakshakawach.uidesign.CountdownWindow
 import com.nextlevelprogrammers.surakshakawach.uidesign.GetStartedLogin
@@ -134,7 +135,9 @@ class MainActivity : ComponentActivity() {
                                 navController = navController,
                                 onSignOutClick={signOut(navController)},
                                 auth=auth,context = this@MainActivity, userId = userId,SOS_Status=SOS_Status, hideSOSFloatingButton={SOS_Status=false}, showSOSFloatingButton={SOS_Status=true},
-                                themeViewModel=themeViewModel
+                                themeViewModel=themeViewModel,
+                                startSOSFService= { startSOSService(userId = userId) },
+                                stopSOSService= { stopSOSService() }
                             )
                         }
                         composable(Routes.COUNTDOWN_SCREEN){
@@ -319,12 +322,14 @@ class MainActivity : ComponentActivity() {
 
     //Location
 
+    @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun requestPermissions() {
         val permissions = arrayOf(
             Manifest.permission.CAMERA,
             Manifest.permission.RECORD_AUDIO,
             Manifest.permission.ACCESS_FINE_LOCATION,
-            Manifest.permission.ACCESS_COARSE_LOCATION
+            Manifest.permission.ACCESS_COARSE_LOCATION,
+            Manifest.permission.POST_NOTIFICATIONS
         )
 
         val requestPermissionLauncher =
@@ -386,6 +391,21 @@ class MainActivity : ComponentActivity() {
             authCallback?.invoke(isAuthenticated) // ✅ Update ViewModel
             authCallback = null
         }
+    fun startSOSService(userId: String) {
+        val intent = Intent(this, SOSForegroundService::class.java).apply {
+            action = SOSForegroundService.Actions.START.toString()
+            putExtra(SOSForegroundService.USER_ID_KEY, userId)
+        }
+        ContextCompat.startForegroundService(this, intent)
+    }
+
+    fun stopSOSService() {
+        val intent = Intent(this, SOSForegroundService::class.java).apply {
+            action = SOSForegroundService.Actions.STOP.toString()
+        }
+        stopService(intent)
+    }
+
 
 
 

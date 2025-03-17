@@ -11,13 +11,13 @@ import android.util.Log
 import androidx.annotation.OptIn
 import androidx.annotation.RequiresApi
 import androidx.camera.camera2.interop.Camera2CameraInfo
-import androidx.camera.camera2.interop.Camera2Interop
-import androidx.camera.camera2.interop.ExperimentalCamera2Interop
-import androidx.camera.core.CameraInfo
 import androidx.camera.core.CameraSelector
 import androidx.camera.lifecycle.ProcessCameraProvider
 import androidx.camera.video.*
 import androidx.core.content.ContextCompat
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleOwner
+import androidx.lifecycle.LifecycleRegistry
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
@@ -41,11 +41,11 @@ class VideoRecorder(private val context: Context) {
     private val cameraExecutor: ExecutorService = Executors.newSingleThreadExecutor()
 
     /**
-     * ✅ Initializes CameraX and sets up Video Capture in SD quality.
+     * ✅ Initializes CameraX with optional Lifecycle binding.
      */
-    @OptIn(ExperimentalCamera2Interop::class)
-    @RequiresApi(Build.VERSION_CODES.P) // Ensure this is only used in API 28+
-    fun initializeCamera() {
+    @OptIn(androidx.camera.camera2.interop.ExperimentalCamera2Interop::class)
+    @RequiresApi(Build.VERSION_CODES.P)
+    fun initializeCamera(useLifecycleOwner: Boolean = true) {
         val cameraProviderFuture = ProcessCameraProvider.getInstance(context)
         cameraProviderFuture.addListener({
             try {
@@ -56,17 +56,26 @@ class VideoRecorder(private val context: Context) {
 
                 val recorder = Recorder.Builder()
                     .setQualitySelector(qualitySelector)
-                    .setExecutor(cameraExecutor) // ✅ Set executor for threading
+                    .setExecutor(cameraExecutor)
                     .build()
-
                 videoCapture = VideoCapture.withOutput(recorder)
 
                 cameraProvider?.unbindAll()
-                cameraProvider?.bindToLifecycle(
-                    context as androidx.lifecycle.LifecycleOwner,
-                    cameraSelector,
-                    videoCapture
-                )
+
+                if (useLifecycleOwner && context is LifecycleOwner) {
+                    // ✅ Activity/Composable case
+                    cameraProvider?.bindToLifecycle(
+                        context as LifecycleOwner,
+                        cameraSelector,
+                        videoCapture
+                    )
+                    Log.d("VideoRecorder", "✅ Camera bound with LifecycleOwner")
+                } else {
+                    // ✅ Service case → Use DummyLifecycleOwner
+                    val dummyOwner = DummyLifecycleOwner()
+                    cameraProvider?.bindToLifecycle(dummyOwner, cameraSelector, videoCapture)
+                    Log.d("VideoRecorder", "✅ Camera bound using DummyLifecycleOwner (Service)")
+                }
 
                 Log.d("VideoRecorder", "✅ CameraX Initialized Successfully")
 
@@ -76,24 +85,6 @@ class VideoRecorder(private val context: Context) {
         }, ContextCompat.getMainExecutor(context))
     }
 
-    /**
-     * ✅ Retrieves CameraCharacteristics using reflection to bypass API restrictions.
-     */
-    @OptIn(ExperimentalCamera2Interop::class)
-    private fun getCameraCharacteristics(cameraInfo: CameraInfo): CameraCharacteristics? {
-        return try {
-            val method = Camera2CameraInfo::class.java.getDeclaredMethod("extractCameraCharacteristics", CameraInfo::class.java)
-            method.isAccessible = true
-            method.invoke(null, cameraInfo) as? CameraCharacteristics
-        } catch (e: Exception) {
-            Log.e("CameraX", "❌ Failed to get CameraCharacteristics: ${e.localizedMessage}")
-            null
-        }
-    }
-
-    /**
-     * ✅ Starts continuous video recording with 60s recording, then 10s break.
-     */
     fun startContinuousRecording(onVideoUploaded: (String, String) -> Unit) {
         isRecordingActive = true
         CoroutineScope(Dispatchers.IO).launch {
@@ -110,14 +101,11 @@ class VideoRecorder(private val context: Context) {
                     }
                 }
 
-                delay(10000) // ⏳ Wait before the next recording
+                delay(10000) // ⏳ Wait before next recording
             }
         }
     }
 
-    /**
-     * ✅ Checks if Camera and Audio permissions are granted.
-     */
     private fun hasCameraPermission(): Boolean {
         return ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
     }
@@ -126,9 +114,6 @@ class VideoRecorder(private val context: Context) {
         return ContextCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) == PackageManager.PERMISSION_GRANTED
     }
 
-    /**
-     * ✅ Starts recording a video safely and returns the file.
-     */
     private fun startVideoRecording(): File? {
         if (!hasCameraPermission() || !hasAudioPermission()) {
             Log.e("VideoRecorder", "❌ Camera or Audio permission not granted!")
@@ -155,7 +140,6 @@ class VideoRecorder(private val context: Context) {
                         Log.d("VideoRecorder", "✅ Recording Finalized")
                     }
                     is VideoRecordEvent.Status -> {
-                        // 🔧 Instead of logging as an error, handle it properly
                         Log.d("VideoRecorder", "ℹ Recording Status Update: ${event.recordingStats}")
                     }
                     else -> {
@@ -167,9 +151,6 @@ class VideoRecorder(private val context: Context) {
         return outputFile
     }
 
-    /**
-     * ✅ Stops recording and uploads video to Firebase.
-     */
     private fun stopVideoRecording(file: File, onUploaded: (String, String) -> Unit) {
         currentRecording?.stop()
         currentRecording = null
@@ -181,18 +162,12 @@ class VideoRecorder(private val context: Context) {
         }
     }
 
-    /**
-     * ✅ Creates a temporary file to store the video before uploading.
-     */
     private fun createVideoFile(): File {
         val timeStamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
         val storageDir = context.getExternalFilesDir(Environment.DIRECTORY_MOVIES)
         return File.createTempFile("SOS_$timeStamp", ".mp4", storageDir)
     }
 
-    /**
-     * ✅ Uploads recorded video to Firebase Storage.
-     */
     private suspend fun uploadVideoToFirebase(
         file: File,
         onUploaded: (String, String) -> Unit
@@ -220,7 +195,7 @@ class VideoRecorder(private val context: Context) {
                 Log.d("FirebaseUpload", "✅ File Uploaded Successfully: $downloadUrl")
 
                 onUploaded(downloadUrl, bucketUrl)
-                file.delete() // ✅ Delete local file after successful upload
+                file.delete()
                 return
 
             } catch (e: Exception) {
@@ -233,22 +208,16 @@ class VideoRecorder(private val context: Context) {
                     return
                 }
 
-                delay(2000L * retryCount) // ⏳ Exponential backoff before retrying
+                delay(2000L * retryCount)
             }
         }
     }
 
-    /**
-     * ✅ Stops continuous video recording.
-     */
     fun stopRecording() {
         isRecordingActive = false
         Log.d("VideoRecorder", "⛔ Stopped Continuous Recording")
     }
 
-    /**
-     * ✅ Unbinds camera and releases resources.
-     */
     fun closeCamera() {
         Log.d("VideoRecorder", "🛑 Closing CameraX Service")
         stopRecording()
@@ -258,4 +227,9 @@ class VideoRecorder(private val context: Context) {
         cameraProvider = null
         Log.d("VideoRecorder", "✅ CameraX Service Closed Successfully")
     }
+
+    /**
+     * ✅ DummyLifecycleOwner for binding camera in Services
+     */
+
 }
