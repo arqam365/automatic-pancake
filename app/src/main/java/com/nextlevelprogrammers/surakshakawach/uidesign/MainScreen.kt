@@ -130,7 +130,7 @@ fun MainScreen(
                         hideSOSFloatingButton()
                               },
                     icon = { Icon(Icons.Default.Cancel, "Stop SOS", tint = Color.Red)},
-                    text = { Text("Stop SOS", color = Color.Red, fontWeight = FontWeight.SemiBold) },
+                    text = { Text("Stop", color = Color.Red, fontWeight = FontWeight.SemiBold) },
                     containerColor = Color.White,
                     elevation = FloatingActionButtonDefaults.elevation(4.dp)
                 )
