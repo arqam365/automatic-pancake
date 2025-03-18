@@ -26,7 +26,8 @@ import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
-import java.time.Instant
+import java.time.ZonedDateTime
+import java.time.format.DateTimeFormatter
 import java.util.UUID
 
 class ApiService() {
@@ -131,11 +132,16 @@ class ApiService() {
 
     @RequiresApi(Build.VERSION_CODES.O)
     suspend fun createSOS(userId: String, latitude: Double, longitude: Double): HttpResponse {
+        val createdAtFormatted = ZonedDateTime.now()
+            .minusSeconds(1) //
+            .withNano(0) // Remove nanoseconds
+            .format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
+
         val requestBody = SOSRequest(
             latitude = latitude,
             longitude = longitude,
-            created_at = Instant.now().minusSeconds(5).toString()
-        )
+            created_at = createdAtFormatted // Fixed timestamp
+             )
 
         val url = "$BASE_URL/v2/user/$userId/ticket/"
 
@@ -148,10 +154,14 @@ class ApiService() {
 
     @RequiresApi(Build.VERSION_CODES.O)
     suspend fun updateLocation(userId: String, ticketId: String, latitude: Double, longitude: Double): HttpResponse {
+        val createdAtFormatted = ZonedDateTime.now()
+            .minusSeconds(1) //
+            .withNano(0) // Remove nanoseconds
+            .format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
         val requestBody = LocationUpdateRequest(
             latitude = latitude,
             longitude = longitude,
-            created_at = Instant.now().toString()
+            created_at = createdAtFormatted
         )
 
         val url = "$BASE_URL/v2/user/$userId/ticket/$ticketId/location"
@@ -164,12 +174,16 @@ class ApiService() {
 
     @RequiresApi(Build.VERSION_CODES.O)
     suspend fun uploadVideo(userId: String, ticketId: String, videoUrl: String, bucketUrl: String): VideoResponse? {
+        val createdAtFormatted = ZonedDateTime.now()
+            .minusSeconds(1) //
+            .withNano(0) // Remove nanoseconds
+            .format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
         return try {
             val requestBody = VideoRequest(
                 video_id = UUID.randomUUID().toString(),
                 video_url = videoUrl,
                 bucket_url = bucketUrl,
-                created_at = Instant.now().toString()
+                created_at = createdAtFormatted
             )
 
             val url = "$BASE_URL/v2/user/$userId/ticket/$ticketId/video"

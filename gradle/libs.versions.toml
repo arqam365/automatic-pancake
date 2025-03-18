@@ -26,6 +26,7 @@ material = "1.12.0"
 monitor = "1.7.2"
 junitKtx = "1.2.1"
 junitJunit = "4.13.2"
+coreI18n = "1.0.0-beta01"
 
 [libraries]
 androidx-animation = { module = "androidx.compose.animation:animation", version.ref = "animation" }
@@ -69,6 +70,7 @@ material = { group = "com.google.android.material", name = "material", version.r
 androidx-monitor = { group = "androidx.test", name = "monitor", version.ref = "monitor" }
 androidx-junit-ktx = { group = "androidx.test.ext", name = "junit-ktx", version.ref = "junitKtx" }
 junit-junit = { group = "junit", name = "junit", version.ref = "junitJunit" }
+androidx-core-i18n = { group = "androidx.core", name = "core-i18n", version.ref = "coreI18n" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }

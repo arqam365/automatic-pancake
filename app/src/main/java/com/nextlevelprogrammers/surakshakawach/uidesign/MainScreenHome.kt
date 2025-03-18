@@ -109,7 +109,8 @@ fun MainScreenHome(
                 showCountDownDialog = showCountDownDialog,
                 hideSOSDialog = {showCountDownDialog=false},
                 activateSOS = {showSOSFloatingButton()
-                    startSOSFService()}
+                    startSOSFService()
+                }
             )
         }
     }

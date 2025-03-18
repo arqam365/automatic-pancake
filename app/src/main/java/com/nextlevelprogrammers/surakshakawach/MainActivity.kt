@@ -136,8 +136,8 @@ class MainActivity : ComponentActivity() {
                                 onSignOutClick={signOut(navController)},
                                 auth=auth,context = this@MainActivity, userId = userId,SOS_Status=SOS_Status, hideSOSFloatingButton={SOS_Status=false}, showSOSFloatingButton={SOS_Status=true},
                                 themeViewModel=themeViewModel,
-                                startSOSFService= { startSOSService(userId = userId) },
-                                stopSOSService= { stopSOSService() }
+                                startSOSFService= { startSOSService(userId = userId, context =  this@MainActivity) },
+                                stopSOSService= { stopSOSService(this@MainActivity) }
                             )
                         }
                         composable(Routes.COUNTDOWN_SCREEN){
@@ -391,20 +391,21 @@ class MainActivity : ComponentActivity() {
             authCallback?.invoke(isAuthenticated) // ✅ Update ViewModel
             authCallback = null
         }
-    fun startSOSService(userId: String) {
-        val intent = Intent(this, SOSForegroundService::class.java).apply {
-            action = SOSForegroundService.Actions.START.toString()
-            putExtra(SOSForegroundService.USER_ID_KEY, userId)
-        }
-        ContextCompat.startForegroundService(this, intent)
+    @RequiresApi(Build.VERSION_CODES.O)
+    fun startSOSService(context: Context, userId: String) {
+        val intent = Intent(context, SOSForegroundService::class.java)
+        intent.action = SOSForegroundService.Actions.START.toString()
+        intent.putExtra(SOSForegroundService.USER_ID_KEY, userId)
+        context.startForegroundService(intent)
     }
 
-    fun stopSOSService() {
-        val intent = Intent(this, SOSForegroundService::class.java).apply {
-            action = SOSForegroundService.Actions.STOP.toString()
-        }
-        stopService(intent)
+
+    fun stopSOSService(context: Context) {
+        val intent = Intent(context, SOSForegroundService::class.java)
+        intent.action = SOSForegroundService.Actions.STOP.toString()
+        context.startService(intent)
     }
+
 
 
 

@@ -81,6 +81,7 @@ dependencies {
     implementation(libs.material)
     implementation(libs.androidx.monitor)
     implementation(libs.androidx.junit.ktx)
+    implementation(libs.androidx.core.i18n)
     testImplementation(libs.junit.jupiter)
     testImplementation(libs.testng)
     androidTestImplementation(libs.junit.junit)
