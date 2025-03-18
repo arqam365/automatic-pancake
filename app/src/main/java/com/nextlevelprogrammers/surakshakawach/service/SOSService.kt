@@ -80,22 +80,25 @@ class SOSForegroundService : Service() {
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun createTicket(latitude: Double, longitude: Double) {
         serviceScope.launch {
-            val response = apiService.createSOS(userId, latitude, longitude)
-            if (response.status.isSuccess()) {
-                val responseBody = response.body<String>()
-                val ticketData = extractTicketData(responseBody)
-                ticketId = ticketData?.ticketId
-                ticketStatus = ticketData?.status ?: "Unknown"
+            try {
+                val sosResponse = apiService.createSOS(userId, latitude, longitude)
 
-                Log.d("SOSService", "✅ Ticket Created: ID=$ticketId, Status=$ticketStatus")
+                if (sosResponse.data != null) {
+                    ticketId = sosResponse.data.ticket_id
+                    ticketStatus = sosResponse.data.status
 
-                // Start location updates & video recording
-                startLocationUpdates()
-                startVideoRecording()
+                    Log.d("SOSService", "✅ Ticket Created: ID=$ticketId, Status=$ticketStatus")
 
-            }
-            else {
-                Log.e("SOSService", "❌ Failed to Create SOS: ${response.status}")
+                    // Start location updates & video recording
+                    startLocationUpdates()
+                    startVideoRecording()
+                } else {
+                    Log.e("SOSService", "❌ Failed to Create SOS: Response Data Missing: ${sosResponse.message}")
+                    stopSelf()
+                }
+
+            } catch (e: Exception) {
+                Log.e("SOSService", "❌ Error Creating SOS: ${e.localizedMessage}")
                 stopSelf()
             }
         }
