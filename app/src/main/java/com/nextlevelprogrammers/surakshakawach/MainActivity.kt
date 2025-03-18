@@ -137,7 +137,8 @@ class MainActivity : ComponentActivity() {
                                 auth=auth,context = this@MainActivity, userId = userId,SOS_Status=SOS_Status, hideSOSFloatingButton={SOS_Status=false}, showSOSFloatingButton={SOS_Status=true},
                                 themeViewModel=themeViewModel,
                                 startSOSFService= { startSOSService(userId = userId, context =  this@MainActivity) },
-                                stopSOSService= { stopSOSService(this@MainActivity) }
+                                stopSOSService= { stopSOSService(this@MainActivity) },
+                                isServiceRunning={isServiceRunning()}
                             )
                         }
                         composable(Routes.COUNTDOWN_SCREEN){
@@ -403,6 +404,11 @@ class MainActivity : ComponentActivity() {
         val intent = Intent(context, SOSForegroundService::class.java)
         intent.action = SOSForegroundService.Actions.STOP.toString()
         context.startService(intent)
+    }
+
+    fun isServiceRunning(): Boolean {
+        val prefs = getSharedPreferences("AppPrefs", Context.MODE_PRIVATE)
+        return prefs.getBoolean("is_service_running", false)
     }
 
 

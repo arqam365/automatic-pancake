@@ -22,9 +22,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -54,8 +57,9 @@ fun MainScreen(
     hideSOSFloatingButton: () -> Unit,
     showSOSFloatingButton: () -> Unit,
     themeViewModel: ThemeViewModel,
-    startSOSFService:()-> Unit,
-    stopSOSService:()-> Unit,
+    startSOSFService: () -> Unit,
+    stopSOSService: () -> Unit,
+    isServiceRunning: () -> Boolean,
 ){
     val isDarkTheme by themeViewModel.isDarkTheme.collectAsState()
     val BottomShadowShape = GenericShape { size, _ ->
@@ -66,6 +70,7 @@ fun MainScreen(
         close()
     }
     var selectedIndex by rememberSaveable { mutableIntStateOf(0) }
+    var isRunning by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -123,11 +128,11 @@ fun MainScreen(
             }
         },
         floatingActionButton ={
-            if(SOS_Status){
+            if(isRunning){
                 ExtendedFloatingActionButton(
                     onClick = {
                         stopSOSService()
-                        hideSOSFloatingButton()
+                        isRunning=false
                               },
                     icon = { Icon(Icons.Default.Cancel, "Stop SOS", tint = Color.Red)},
                     text = { Text("Stop", color = Color.Red, fontWeight = FontWeight.SemiBold) },
@@ -137,9 +142,12 @@ fun MainScreen(
             }
         }
     ) { innerPadding ->
+        LaunchedEffect(Unit){
+            isRunning=isServiceRunning()
+        }
         Box(modifier = Modifier.padding(innerPadding)) {
             when (selectedIndex) {
-                0 -> MainScreenHome(modifier, navController,auth,showSOSFloatingButton={showSOSFloatingButton()},
+                0 -> MainScreenHome(modifier, navController,auth,showSOSFloatingButton={isRunning=true},
                     startSOSFService=startSOSFService)
                 1 -> MainScreenContactRoot(modifier)
                 2 -> MainScreenProfile(onSignOutClick=onSignOutClick)

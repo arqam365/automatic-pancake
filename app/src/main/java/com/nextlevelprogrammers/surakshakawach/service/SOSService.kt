@@ -1,6 +1,7 @@
 package com.nextlevelprogrammers.surakshakawach.service
 
 import android.app.Service
+import android.content.Context
 import android.content.Intent
 import android.os.Build
 import android.os.IBinder
@@ -12,8 +13,6 @@ import com.nextlevelprogrammers.surakshakawach.data.remote.ApiService
 import com.nextlevelprogrammers.surakshakawach.emergency_videos.VideoRecorder
 import com.nextlevelprogrammers.surakshakawach.model.TicketResponse
 import com.nextlevelprogrammers.surakshakawach.utils.LocationUtils
-import io.ktor.client.call.body
-import io.ktor.http.isSuccess
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
@@ -39,17 +38,30 @@ class SOSForegroundService : Service() {
         const val CHANNEL_ID = "running_channel"
         const val USER_ID_KEY = "user_id"
     }
+    private fun setServiceRunning(isRunning: Boolean) {
+        val prefs = getSharedPreferences("AppPrefs", Context.MODE_PRIVATE)
+        prefs.edit().putBoolean("is_service_running", isRunning).apply()
+    }
 
     override fun onBind(intent: Intent?): IBinder? = null
+
+    override fun onDestroy() {
+        super.onDestroy()
+        setServiceRunning(false)
+    }
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         when (intent?.action) {
             Actions.START.toString() -> {
                 userId = intent.getStringExtra(USER_ID_KEY) ?: ""
+                setServiceRunning(true)
                 startSOSFlow()
             }
-            Actions.STOP.toString() -> stopSOS()
+            Actions.STOP.toString() -> {
+                stopSOS()
+                setServiceRunning(false)
+            }
         }
         return START_STICKY
     }
@@ -63,6 +75,7 @@ class SOSForegroundService : Service() {
             .setContentText("Your location is being shared")
             .build()
         startForeground(1, notification)
+
 
         // Initialize
         apiService = ApiService()
