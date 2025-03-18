@@ -321,7 +321,6 @@ class MainActivity : ComponentActivity() {
 
 
     //Location
-
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun requestPermissions() {
         val permissions = arrayOf(

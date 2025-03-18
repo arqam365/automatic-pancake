@@ -196,15 +196,17 @@ suspend fun stopSOS(
 @RequiresApi(Build.VERSION_CODES.O)
 suspend fun createSOS(apiService: ApiService, userId: String, latitude: Double, longitude: Double): TicketResponse? {
     return try {
-        val response = apiService.createSOS(userId, latitude, longitude)
-        if (response.status.isSuccess()) {
-            val responseBody = response.body<String>()
-            Log.d("SOSGranted", "✅ SOS Created: Response -> $responseBody")
+        val sosResponse = apiService.createSOS(userId, latitude, longitude)
+        Log.d("SOSGranted", "✅ SOS Created: Ticket ID -> ${sosResponse.data?.ticket_id}, Status -> ${sosResponse.data?.status}")
 
-            // Extract `ticket_id` and `status` from JSON response
-            extractTicketData(responseBody)
+        if (sosResponse.data != null) {
+            // Directly map response to TicketResponse
+            TicketResponse(
+                ticketId = sosResponse.data.ticket_id,
+                status = sosResponse.data.status
+            )
         } else {
-            Log.e("SOSGranted", "❌ Failed to Create SOS: ${response.status}")
+            Log.e("SOSGranted", "❌ SOS Response Data Missing")
             null
         }
     } catch (e: Exception) {
