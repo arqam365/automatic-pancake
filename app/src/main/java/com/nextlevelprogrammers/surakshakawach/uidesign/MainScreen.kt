@@ -53,7 +53,9 @@ fun MainScreen(
     SOS_Status: Boolean,
     hideSOSFloatingButton: () -> Unit,
     showSOSFloatingButton: () -> Unit,
-    themeViewModel: ThemeViewModel
+    themeViewModel: ThemeViewModel,
+    startSOSFService:()-> Unit,
+    stopSOSService:()-> Unit,
 ){
     val isDarkTheme by themeViewModel.isDarkTheme.collectAsState()
     val BottomShadowShape = GenericShape { size, _ ->
@@ -124,6 +126,7 @@ fun MainScreen(
             if(SOS_Status){
                 ExtendedFloatingActionButton(
                     onClick = {
+                        stopSOSService()
                         hideSOSFloatingButton()
                               },
                     icon = { Icon(Icons.Default.Cancel, "Stop SOS", tint = Color.Red)},
@@ -136,7 +139,8 @@ fun MainScreen(
     ) { innerPadding ->
         Box(modifier = Modifier.padding(innerPadding)) {
             when (selectedIndex) {
-                0 -> MainScreenHome(modifier, navController,auth,showSOSFloatingButton={showSOSFloatingButton()})
+                0 -> MainScreenHome(modifier, navController,auth,showSOSFloatingButton={showSOSFloatingButton()},
+                    startSOSFService=startSOSFService)
                 1 -> MainScreenContactRoot(modifier)
                 2 -> MainScreenProfile(onSignOutClick=onSignOutClick)
             }

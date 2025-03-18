@@ -1,7 +1,9 @@
 package com.nextlevelprogrammers.surakshakawach.uidesign
 
+import android.os.Build
 import android.util.Log
 import android.widget.Toast
+import androidx.annotation.RequiresApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
@@ -49,22 +51,25 @@ import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.rememberCameraPositionState
 import com.google.maps.android.compose.rememberMarkerState
 import com.nextlevelprogrammers.surakshakawach.R
-import com.nextlevelprogrammers.surakshakawach.Routes
 import com.nextlevelprogrammers.surakshakawach.utils.LocationUtils
 import kotlinx.coroutines.delay
 
+@RequiresApi(Build.VERSION_CODES.O)
 @Composable
 
 fun MainScreenHome(
     modifier: Modifier,
     navController: NavController,
     auth: FirebaseAuth,
-    showSOSFloatingButton: () -> Unit
+    showSOSFloatingButton: () -> Unit,
+    startSOSFService:() -> Unit
 )
 {
     val user= auth.currentUser
     val user_name = user?.displayName
     val user_profile_picture = user?.photoUrl
+    val userId = auth.currentUser?.uid ?: "unknown"
+
     var showCountDownDialog by remember{ mutableStateOf(false)}
     Box(contentAlignment = Alignment.Center, modifier = Modifier.padding()){
         Column(
@@ -104,7 +109,8 @@ fun MainScreenHome(
                 showCountDownDialog = showCountDownDialog,
                 hideSOSDialog = {showCountDownDialog=false},
                 activateSOS = {showSOSFloatingButton()
-                    navController.navigate(Routes.SOS_SENT)}
+                    startSOSFService()
+                }
             )
         }
     }
@@ -148,7 +154,7 @@ fun SOSDisplay(
             IconButton(modifier=modifier.size(150.dp).offset(y=(75.dp)),
                 onClick = {
                     if(showCountDownDialog){
-                        Toast.makeText(context, "Hello, this is a Toast!", Toast.LENGTH_LONG).show()
+                        Toast.makeText(context, "SOS is Active Right Now", Toast.LENGTH_LONG).show()
                     }
                     else{
                         sendSOS()
@@ -165,6 +171,7 @@ fun SOSDisplay(
 }
 ////This is the dialog box for Countdown/////////
 
+@RequiresApi(Build.VERSION_CODES.O)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CountDownDialog(
@@ -198,6 +205,7 @@ fun CountDownDialog(
             Button(onClick = {
                 activateSOS()
                 hideSOSDialog()
+
             }) {
                 Text("Send SOS")
             }
@@ -208,4 +216,5 @@ fun CountDownDialog(
             }
         }
     )
+
 }

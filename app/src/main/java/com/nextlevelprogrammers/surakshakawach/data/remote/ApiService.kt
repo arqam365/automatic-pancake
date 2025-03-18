@@ -185,6 +185,10 @@ class ApiService() {
 
     @RequiresApi(Build.VERSION_CODES.O)
     suspend fun uploadVideo(userId: String, ticketId: String, videoUrl: String, bucketUrl: String): VideoResponse? {
+        val createdAtFormatted = ZonedDateTime.now()
+            .minusSeconds(1) //
+            .withNano(0) // Remove nanoseconds
+            .format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
         return try {
 
             val createdAtFormatted = ZonedDateTime.now()
