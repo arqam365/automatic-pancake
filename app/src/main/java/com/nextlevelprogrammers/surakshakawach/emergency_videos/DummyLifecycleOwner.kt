@@ -13,4 +13,8 @@ class DummyLifecycleOwner : LifecycleOwner {
 
     override val lifecycle: Lifecycle
         get() = lifecycleRegistry
+
+    fun shutdown() {
+        lifecycleRegistry.currentState = Lifecycle.State.DESTROYED
+    }
 }

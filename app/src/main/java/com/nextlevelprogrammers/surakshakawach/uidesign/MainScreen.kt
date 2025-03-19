@@ -15,12 +15,11 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.GenericShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Cancel
-import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.FloatingActionButtonDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -36,7 +35,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.res.painterResource
-import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation.NavController
 import com.google.firebase.auth.FirebaseAuth
@@ -129,16 +127,17 @@ fun MainScreen(
         },
         floatingActionButton ={
             if(isRunning){
-                ExtendedFloatingActionButton(
+                FloatingActionButton(
                     onClick = {
                         stopSOSService()
                         isRunning=false
                               },
-                    icon = { Icon(Icons.Default.Cancel, "Stop SOS", tint = Color.Red)},
-                    text = { Text("Stop", color = Color.Red, fontWeight = FontWeight.SemiBold) },
-                    containerColor = Color.White,
+                    containerColor = Color.Red,
+
                     elevation = FloatingActionButtonDefaults.elevation(4.dp)
-                )
+                ){
+                    Icon(Icons.Default.Cancel, "Stop SOS", tint = Color.White)
+                }
             }
         }
     ) { innerPadding ->

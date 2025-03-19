@@ -1,5 +1,6 @@
 package com.nextlevelprogrammers.surakshakawach.uidesign
 
+import android.util.Log
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
@@ -22,6 +23,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -31,20 +33,20 @@ import com.google.firebase.auth.FirebaseAuth
 import com.nextlevelprogrammers.surakshakawach.MainActivity
 
 @Composable
-fun MainScreenProfile(modifier: Modifier = Modifier, onSignOutClick: () -> Unit){
-    Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center){
+fun MainScreenProfile(modifier: Modifier = Modifier, onSignOutClick: () -> Unit) {
+    Box(modifier.fillMaxSize(), contentAlignment = Alignment.Center) {
         val currentUser: MainActivity.UserData?
-            val firebaseUser = FirebaseAuth.getInstance().currentUser
-              currentUser= firebaseUser?.let {
-                  MainActivity.UserData(
-                      uid = it.uid,
-                      displayName = it.displayName,
-                      email = it.email,
-                      photoUrl = it.photoUrl?.toString(),
-                      phoneNumber = it.phoneNumber
-                  )
-            }
-        ProfileCard(onSignOutClick=onSignOutClick,user=currentUser)
+        val firebaseUser = FirebaseAuth.getInstance().currentUser
+        currentUser = firebaseUser?.let {
+            MainActivity.UserData(
+                uid = it.uid,
+                displayName = it.displayName,
+                email = it.email,
+                photoUrl = it.photoUrl?.toString(),
+                phoneNumber = it.phoneNumber
+            )
+        }
+        ProfileCard(onSignOutClick = onSignOutClick, user = currentUser)
     }
 }
 
@@ -52,30 +54,46 @@ fun MainScreenProfile(modifier: Modifier = Modifier, onSignOutClick: () -> Unit)
 fun ProfileCard(
     modifier: Modifier = Modifier,
     onSignOutClick: () -> Unit,
-    user: MainActivity.UserData?, ) {
-    val user_name= user?.displayName
-    val user_email= user?.email
-    val user_gender="Male"
-    Box(modifier=modifier.shadow(4.dp, RoundedCornerShape(24.dp)).clip(RoundedCornerShape(24.dp)).background(MaterialTheme.colorScheme.secondaryContainer)){
+    user: MainActivity.UserData?,
+) {
+    val context = LocalContext.current
+    val user_name = user?.displayName ?: ""
+    val user_email = user?.email ?: ""
+    val user_gender = "Male"
+
+
+
+    Box(
+        modifier = modifier
+            .shadow(4.dp, RoundedCornerShape(24.dp))
+            .clip(RoundedCornerShape(24.dp))
+            .background(MaterialTheme.colorScheme.secondaryContainer)
+    ) {
         Column(
             horizontalAlignment = Alignment.CenterHorizontally,
             verticalArrangement = Arrangement.spacedBy(28.dp),
             modifier = modifier.padding(20.dp, 32.dp)
         ) {
+            Log.d("UserRow", "Rendering Row: user_name = $user_name, user_profile_picture = ${user?.photoUrl.toString()}")
+
             AsyncImage(
-                modifier = modifier.size(120.dp).clip(CircleShape),
+                model = user?.photoUrl,
                 contentDescription = "UserProfilePicture",
-                model = user?.photoUrl
+                modifier = modifier.size(120.dp).clip(CircleShape),
             )
-            Column(horizontalAlignment = Alignment.CenterHorizontally, verticalArrangement = Arrangement.spacedBy(4.dp)){
+
+            Column(
+                horizontalAlignment = Alignment.CenterHorizontally,
+                verticalArrangement = Arrangement.spacedBy(4.dp)
+            ) {
                 Text(
-                    text = if(user_name!=null) user_name else "",
+                    text = user_name,
                     textAlign = TextAlign.Center,
                     fontSize = 28.sp,
                     fontWeight = FontWeight.Bold,
                 )
                 Text(
-                    text = if(user_email!=null) user_email else "",
+                    text = user_email,
                     textAlign = TextAlign.Center,
                     fontSize = 18.sp
                 )
@@ -92,16 +110,13 @@ fun ProfileCard(
                     )
                 }
             }
-            Button(onClick = {
-                onSignOutClick()},
-                modifier=modifier.fillMaxWidth(0.8f),
+            Button(
+                onClick = { onSignOutClick() },
+                modifier = modifier.fillMaxWidth(0.8f),
                 shape = RoundedCornerShape(16.dp)
-                ) {
-                Text("Sign Out",
-                    fontSize = 20.sp)
+            ) {
+                Text("Sign Out", fontSize = 20.sp)
             }
         }
     }
 }
-
-
