@@ -3,29 +3,37 @@ package com.nextlevelprogrammers.surakshakawach.emergency_videos
 import android.Manifest
 import android.content.Context
 import android.content.pm.PackageManager
-import android.hardware.camera2.CameraCharacteristics
 import android.net.Uri
 import android.os.Build
 import android.os.Environment
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import androidx.annotation.OptIn
 import androidx.annotation.RequiresApi
-import androidx.camera.camera2.interop.Camera2CameraInfo
 import androidx.camera.core.CameraSelector
 import androidx.camera.lifecycle.ProcessCameraProvider
-import androidx.camera.video.*
+import androidx.camera.video.FileOutputOptions
+import androidx.camera.video.Quality
+import androidx.camera.video.QualitySelector
+import androidx.camera.video.Recorder
+import androidx.camera.video.Recording
+import androidx.camera.video.VideoCapture
+import androidx.camera.video.VideoRecordEvent
 import androidx.core.content.ContextCompat
-import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleOwner
-import androidx.lifecycle.LifecycleRegistry
 import com.google.firebase.auth.FirebaseAuth
 import com.google.firebase.storage.FirebaseStorage
 import com.google.firebase.storage.StorageReference
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.tasks.await
 import java.io.File
 import java.text.SimpleDateFormat
-import java.util.*
+import java.util.Date
+import java.util.Locale
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -39,6 +47,7 @@ class VideoRecorder(private val context: Context) {
         FirebaseStorage.getInstance("gs://suraksha-kawach-151024-v2-development")
             .reference.child("emergency_videos")
     private val cameraExecutor: ExecutorService = Executors.newSingleThreadExecutor()
+    private var dummyLifecycleOwner: DummyLifecycleOwner? = null
 
     /**
      * ✅ Initializes CameraX with optional Lifecycle binding.
@@ -71,8 +80,8 @@ class VideoRecorder(private val context: Context) {
                     )
                     Log.d("VideoRecorder", "✅ Camera bound with LifecycleOwner")
                 } else {
-                    // ✅ Service case → Use DummyLifecycleOwner
                     val dummyOwner = DummyLifecycleOwner()
+                    dummyLifecycleOwner = dummyOwner
                     cameraProvider?.bindToLifecycle(dummyOwner, cameraSelector, videoCapture)
                     Log.d("VideoRecorder", "✅ Camera bound using DummyLifecycleOwner (Service)")
                 }
@@ -151,7 +160,8 @@ class VideoRecorder(private val context: Context) {
         return outputFile
     }
 
-    private fun stopVideoRecording(file: File, onUploaded: (String, String) -> Unit) {
+    private fun stopVideoRecording(file: File, onUploaded: (String, String) -> Unit)
+    {
         currentRecording?.stop()
         currentRecording = null
 
@@ -222,7 +232,12 @@ class VideoRecorder(private val context: Context) {
         Log.d("VideoRecorder", "🛑 Closing CameraX Service")
         stopRecording()
         currentRecording?.close()
-        cameraProvider?.unbindAll()
+        Handler(Looper.getMainLooper()).post {
+            cameraProvider?.unbindAll()
+            dummyLifecycleOwner?.shutdown() // ✅ Mark Lifecycle as DESTROYED!
+            dummyLifecycleOwner = null
+        }
+        Log.d("Video Recorder", "Dummy Lifecycle Destroyed")
         videoCapture = null
         cameraProvider = null
         Log.d("VideoRecorder", "✅ CameraX Service Closed Successfully")

@@ -134,7 +134,9 @@ dependencies {
 
     //Coil for image loading
     implementation("io.coil-kt.coil3:coil-compose:3.1.0")
+    implementation("com.squareup.okhttp3:okhttp:4.11.0")
     implementation("io.coil-kt.coil3:coil-network-okhttp:3.1.0")
+
 
     //Map dependencies
     implementation("com.google.android.gms:play-services-maps:19.1.0")
@@ -147,5 +149,8 @@ dependencies {
     implementation("androidx.camera:camera-video:1.4.1")
     implementation ("com.google.accompanist:accompanist-systemuicontroller:0.32.0")
     implementation ("androidx.datastore:datastore-preferences:1.0.0")
+    implementation ("com.github.bumptech.glide:compose:1.0.0-beta01")
+
+    implementation("com.google.firebase:firebase-perf")
 
 }

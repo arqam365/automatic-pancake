@@ -43,6 +43,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil3.compose.AsyncImage
+import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.firebase.auth.FirebaseAuth
@@ -68,8 +69,6 @@ fun MainScreenHome(
     val user= auth.currentUser
     val user_name = user?.displayName
     val user_profile_picture = user?.photoUrl
-    val userId = auth.currentUser?.uid ?: "unknown"
-
     var showCountDownDialog by remember{ mutableStateOf(false)}
     Box(contentAlignment = Alignment.Center, modifier = Modifier.padding()){
         Column(
@@ -83,6 +82,7 @@ fun MainScreenHome(
                 horizontalArrangement = Arrangement.SpaceBetween
             )
             {
+                Log.d("UserRow", "Rendering Row: user_name = $user_name, user_profile_picture = $user_profile_picture")
                 Text(
                     text = "Hi, $user_name!",
                     fontSize = 22.sp

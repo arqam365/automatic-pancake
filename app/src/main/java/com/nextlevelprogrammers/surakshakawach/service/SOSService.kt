@@ -48,6 +48,7 @@ class SOSForegroundService : Service() {
     override fun onDestroy() {
         super.onDestroy()
         setServiceRunning(false)
+        videoRecorder.closeCamera()
     }
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
