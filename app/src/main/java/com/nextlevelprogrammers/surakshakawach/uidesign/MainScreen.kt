@@ -133,6 +133,7 @@ fun MainScreen(
                         isRunning=false
                               },
                     containerColor = Color.Red,
+
                     elevation = FloatingActionButtonDefaults.elevation(4.dp)
                 ){
                     Icon(Icons.Default.Cancel, "Stop SOS", tint = Color.White)
