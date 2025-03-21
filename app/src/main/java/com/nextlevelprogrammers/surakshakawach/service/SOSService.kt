@@ -120,16 +120,24 @@ class SOSForegroundService : Service() {
 
     @RequiresApi(Build.VERSION_CODES.O)
     private fun startLocationUpdates() {
+        var currentLatitude:Double=0.0
+        var currentLongitude:Double=0.0
         locationJob = serviceScope.launch {
             while (ticketStatus == "Active" && ticketId != null) {
                 locationUtils.getLastKnownLocation { latitude, longitude ->
                     serviceScope.launch {
-                        val response = apiService.updateLocation(userId, ticketId!!, latitude, longitude)
-                        Log.d("SOSService", "✅ Location Updated: Lat=$latitude, Long=$longitude")
-                        if (response != null) {
-                            Log.d("SOSGranted", "✅ Video Sent to API")
-                        } else {
-                            Log.e("SOSGranted", "❌ Failed to Send Video to API")
+                        if( latitude!= currentLatitude || longitude!= currentLongitude){
+                            apiService.updateLocation(userId, ticketId!!, latitude, longitude)
+                            currentLatitude= latitude
+                            currentLongitude= longitude
+                            Log.d(
+                                "SOSService",
+                                "✅ Location Updated: Lat=$latitude, Long=$longitude"
+                            )
+                        }
+                        else
+                        {
+                            Log.d("SOS Service", "Same Coordinates not Send")
                         }
                     }
                 }

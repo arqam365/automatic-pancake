@@ -28,7 +28,6 @@ import io.ktor.http.contentType
 import io.ktor.http.isSuccess
 import io.ktor.serialization.kotlinx.json.json
 import kotlinx.serialization.json.Json
-import java.time.Instant
 import java.time.ZonedDateTime
 import java.time.format.DateTimeFormatter
 import java.util.UUID
@@ -185,12 +184,7 @@ class ApiService() {
 
     @RequiresApi(Build.VERSION_CODES.O)
     suspend fun uploadVideo(userId: String, ticketId: String, videoUrl: String, bucketUrl: String): VideoResponse? {
-        val createdAtFormatted = ZonedDateTime.now()
-            .minusSeconds(1) //
-            .withNano(0) // Remove nanoseconds
-            .format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
         return try {
-
             val createdAtFormatted = ZonedDateTime.now()
                 .minusSeconds(1) // Optional: 1-second buffer
                 .withNano(0) // Remove nanoseconds
