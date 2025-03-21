@@ -1,5 +1,6 @@
 package com.nextlevelprogrammers.surakshakawach.uidesign
 
+import android.content.Context
 import android.os.Build
 import android.util.Log
 import android.widget.Toast
@@ -41,15 +42,17 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.edit
 import androidx.navigation.NavController
 import coil3.compose.AsyncImage
+import com.google.android.gms.maps.CameraUpdateFactory
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.firebase.auth.FirebaseAuth
 import com.google.maps.android.compose.GoogleMap
 import com.google.maps.android.compose.Marker
 import com.google.maps.android.compose.rememberCameraPositionState
-import com.google.maps.android.compose.rememberMarkerState
+import com.google.maps.android.compose.rememberUpdatedMarkerState
 import com.nextlevelprogrammers.surakshakawach.R
 import com.nextlevelprogrammers.surakshakawach.utils.LocationUtils
 import kotlinx.coroutines.delay
@@ -66,10 +69,27 @@ fun MainScreenHome(
     isServiceRunning: () -> Boolean
 )
 {
+    val context = LocalContext.current
+    val prefs = context.getSharedPreferences("AppPrefs", Context.MODE_PRIVATE)
     val user= auth.currentUser
     val user_name = user?.displayName
     val user_profile_picture = user?.photoUrl
     var showCountDownDialog by remember{ mutableStateOf(false)}
+
+    LaunchedEffect(Unit) {
+        while (true) {
+            val sosTriggered = prefs.getBoolean("SOS_TRIGGERED", false)
+            if (sosTriggered) {
+                Log.d("MainScreenHome", "SOS_TRIGGERED flag detected. Auto triggering SOS.")
+                showCountDownDialog = true
+                showSOSFloatingButton()
+                startSOSFService()
+                prefs.edit { putBoolean("SOS_TRIGGERED", false) } // Reset flag
+            }
+            delay(2000L) // Check every 2 seconds
+        }
+    }
+
     Box(contentAlignment = Alignment.Center, modifier = Modifier.padding()){
         Column(
             modifier = modifier.fillMaxSize().background(MaterialTheme.colorScheme.background)
@@ -129,29 +149,39 @@ fun SOSDisplay(
 ){
     val context= LocalContext.current
     val locationUtils = remember { LocationUtils(navController.context) }
-    val userLocation = remember { mutableStateOf(LatLng(25.4485, 78.5689)) }
+    var currentLocation by remember { mutableStateOf<LatLng?>(null) }
+    val cameraPositionState = rememberCameraPositionState()
 
-    // Fetch location on startup
+    // Fetch location
     LaunchedEffect(Unit) {
         locationUtils.getLastKnownLocation { lat, long ->
-            userLocation.value = LatLng(lat, long)
+            currentLocation = LatLng(lat, long)
             Log.d("GoogleMap", "User Location: $lat, $long")
+        }
+    }
+
+    // Animate camera when location updates
+    LaunchedEffect(currentLocation) {
+        currentLocation?.let {
+            cameraPositionState.animate(
+                update = CameraUpdateFactory.newLatLngZoom(it, 15f)
+            )
         }
     }
 
     Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter){
         Box(modifier.fillMaxWidth().fillMaxHeight(0.885f).align(Alignment.TopCenter), contentAlignment = Alignment.BottomCenter){
             Box(modifier=modifier.fillMaxSize().shadow(2.dp,RoundedCornerShape(28.dp)).clip(RoundedCornerShape(28.dp)).background(Color.Gray)) {
-                GoogleMap(
-                    modifier = Modifier.fillMaxSize(),
-                    cameraPositionState = rememberCameraPositionState {
-                        position = CameraPosition.fromLatLngZoom(userLocation.value, 15f)
+                if (currentLocation != null) {
+                    GoogleMap(
+                        modifier = Modifier.fillMaxSize(),
+                        cameraPositionState = cameraPositionState
+                    ) {
+                        Marker(
+                            state = rememberUpdatedMarkerState(position = currentLocation!!),
+                            title = "Your Location"
+                        )
                     }
-                ) {
-                    Marker(
-                        state = rememberMarkerState(position = userLocation.value),
-                        title = "Your Location"
-                    )
                 }
             }
             IconButton(modifier=modifier.size(150.dp).offset(y=(75.dp)),
@@ -219,5 +249,4 @@ fun CountDownDialog(
             }
         }
     )
-
 }

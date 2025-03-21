@@ -70,6 +70,7 @@ dependencies {
     implementation(libs.play.services.auth) // ✅ Fixes missing CredentialsOptions.Builder
     implementation("com.google.firebase:firebase-storage-ktx:20.2.1")
     implementation("com.google.firebase:firebase-analytics")
+    implementation("com.google.firebase:firebase-perf")
 
     // ✅ Jetpack Navigation
     implementation(libs.androidx.navigation.compose)
@@ -152,5 +153,7 @@ dependencies {
     implementation ("com.github.bumptech.glide:compose:1.0.0-beta01")
 
     implementation("com.google.firebase:firebase-perf")
+
+    implementation ("ai.picovoice:porcupine-android:3.0.1")
 
 }
