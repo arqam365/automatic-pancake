@@ -43,7 +43,6 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.navigation.NavController
 import coil3.compose.AsyncImage
-import com.bumptech.glide.integration.compose.ExperimentalGlideComposeApi
 import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.firebase.auth.FirebaseAuth
@@ -63,7 +62,8 @@ fun MainScreenHome(
     navController: NavController,
     auth: FirebaseAuth,
     showSOSFloatingButton: () -> Unit,
-    startSOSFService:() -> Unit
+    startSOSFService: () -> Unit,
+    isServiceRunning: () -> Boolean
 )
 {
     val user= auth.currentUser
@@ -101,15 +101,17 @@ fun MainScreenHome(
 
             Box(modifier = modifier.weight(1f).fillMaxSize().padding(horizontal = 12.dp, vertical = 16.dp))
             {
-                SOSDisplay(modifier, navController,showCountDownDialog,sendSOS={showCountDownDialog=true})
+                SOSDisplay(modifier, navController,showCountDownDialog,sendSOS={showCountDownDialog=true}, isServiceRunning={isServiceRunning()})
             }
         }
         if(showCountDownDialog){
             CountDownDialog(
                 showCountDownDialog = showCountDownDialog,
                 hideSOSDialog = {showCountDownDialog=false},
-                activateSOS = {showSOSFloatingButton()
+                activateSOS = {
                     startSOSFService()
+                    showSOSFloatingButton()
+//                    navController.navigate(Routes.SOS_SENT)
                 }
             )
         }
@@ -122,7 +124,8 @@ fun SOSDisplay(
     modifier: Modifier,
     navController: NavController,
     showCountDownDialog: Boolean,
-    sendSOS: () -> Unit
+    sendSOS: () -> Unit,
+    isServiceRunning: () -> Boolean
 ){
     val context= LocalContext.current
     val locationUtils = remember { LocationUtils(navController.context) }
@@ -153,7 +156,7 @@ fun SOSDisplay(
             }
             IconButton(modifier=modifier.size(150.dp).offset(y=(75.dp)),
                 onClick = {
-                    if(showCountDownDialog){
+                    if(isServiceRunning()){
                         Toast.makeText(context, "SOS is Active Right Now", Toast.LENGTH_LONG).show()
                     }
                     else{

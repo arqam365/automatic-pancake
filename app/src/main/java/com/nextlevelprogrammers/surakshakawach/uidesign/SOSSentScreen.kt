@@ -16,7 +16,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -26,12 +25,9 @@ import com.nextlevelprogrammers.surakshakawach.MainActivity
 import com.nextlevelprogrammers.surakshakawach.data.remote.ApiService
 import com.nextlevelprogrammers.surakshakawach.emergency_videos.VideoRecorder
 import com.nextlevelprogrammers.surakshakawach.model.TicketResponse
-import com.nextlevelprogrammers.surakshakawach.utils.LocationUtils
 import com.nextlevelprogrammers.surakshakawach.viewmodel.AuthViewModel
 import io.ktor.client.call.body
 import io.ktor.http.isSuccess
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
 import kotlinx.serialization.json.jsonPrimitive
@@ -47,85 +43,15 @@ fun SOSGranted(
     showSOSFloatingButton: () -> Unit
 ) {
     val isAuthenticated by authViewModel.isAuthenticated.collectAsState()
-    val locationUtils = remember { LocationUtils(context) }
-    val apiService = remember { ApiService() }
-    val videoRecorder = remember { VideoRecorder(context) }
     var locationText by remember { mutableStateOf("Fetching location...") }
-    var ticketId by remember { mutableStateOf<String?>(null) }
     var ticketStatus by remember { mutableStateOf("Pending") }
-    val coroutineScope = rememberCoroutineScope()
 
 
-    LaunchedEffect(Unit) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P) {
-            videoRecorder.initializeCamera() // ✅ Only call if API is 28+
-        } else {
-            Log.e("SOSGranted", "❌ Camera2 Ultra-Wide is not supported below API 28, using Default Camera.")
-        }
-
-        videoRecorder.startContinuousRecording { videoUrl, bucketUrl ->
-            Log.d("SOSGranted", "✅ Video Uploaded, Sending to API")
-
-            ticketId?.let { ticket ->
-                coroutineScope.launch {
-                    val response = apiService.uploadVideo(userId, ticket, videoUrl, bucketUrl)
-                    if (response != null) {
-                        Log.d("SOSGranted", "✅ Video Sent to API")
-                    } else {
-                        Log.e("SOSGranted", "❌ Failed to Send Video to API")
-                    }
-                }
-            }
-        }
-    }
-
-    LaunchedEffect(Unit) {
-        locationUtils.getLastKnownLocation { latitude, longitude ->
-            locationText = "Lat: $latitude, Long: $longitude"
-            Log.d("SOSGranted", "Live Location: Lat: $latitude, Long: $longitude")
-
-            // **Step 1: Create SOS Ticket**
-            coroutineScope.launch {
-                val ticketData = createSOS(apiService, userId, latitude, longitude)
-                ticketId = ticketData?.ticketId
-                ticketStatus = ticketData?.status ?: "Unknown"
-                Log.d("SOSGranted", "✅ Ticket Created: ID = $ticketId, Status = $ticketStatus")
-                showSOSFloatingButton()
-            }
-        }
-    }
-
-    LaunchedEffect(ticketId) {
-        ticketId?.let { id ->
-            while (ticketStatus == "Active") {
-                locationUtils.getLastKnownLocation { latitude, longitude ->
-                    locationText = "Lat: $latitude, Long: $longitude"
-                    Log.d("SOSGranted", "Updating SOS Location: Lat: $latitude, Long: $longitude")
-
-                    // **Step 2: Update Location Every 5 Sec**
-                    coroutineScope.launch {
-                        updateLocation(apiService, userId, id, latitude, longitude)
-                    }
-                }
-                delay(5000) // Fetch and send updated location every 5 seconds
-            }
-        }
-    }
     LaunchedEffect(isAuthenticated) {
         if (isAuthenticated) {
-            coroutineScope.launch {
-                stopSOS(ticketId, userId, videoRecorder, apiService) { success ->
-                    if (success) {
-                        ticketStatus = "Closed"
-                        Log.d("SOSGranted", "✅ SOS Stopped & Ticket Closed")
                         authViewModel.resetAuthentication()
                         hideSOSFloatingButton()
                         navController.popBackStack()
-                    } else {
-                        Log.e("SOSGranted", "❌ Failed to Close Ticket")
-                    }
-                }
-            }
         }
     }
 
