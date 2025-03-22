@@ -76,19 +76,6 @@ fun MainScreenHome(
     val user_profile_picture = user?.photoUrl
     var showCountDownDialog by remember{ mutableStateOf(false)}
 
-    LaunchedEffect(Unit) {
-        while (true) {
-            val sosTriggered = prefs.getBoolean("SOS_TRIGGERED", false)
-            if (sosTriggered) {
-                Log.d("MainScreenHome", "SOS_TRIGGERED flag detected. Auto triggering SOS.")
-                showCountDownDialog = true
-                showSOSFloatingButton()
-                startSOSFService()
-                prefs.edit { putBoolean("SOS_TRIGGERED", false) } // Reset flag
-            }
-            delay(2000L) // Check every 2 seconds
-        }
-    }
 
     Box(contentAlignment = Alignment.Center, modifier = Modifier.padding()){
         Column(
