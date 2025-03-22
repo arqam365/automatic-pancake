@@ -106,8 +106,6 @@ class MainActivity : ComponentActivity() {
 
         requestPermissions()
 
-        startVoiceWakeupService()
-
         setContent {
             val themeViewModel: ThemeViewModel = viewModel(factory = object : ViewModelProvider.Factory {
                 override fun <T : ViewModel> create(modelClass: Class<T>): T {
@@ -152,12 +150,6 @@ class MainActivity : ComponentActivity() {
                 }
             }
         }
-    }
-
-    private fun startVoiceWakeupService() {
-        val intent = Intent(this, com.nextlevelprogrammers.surakshakawach.service.VoiceWakeupService::class.java)
-        ContextCompat.startForegroundService(this, intent)
-        Log.d("MainActivity", "VoiceWakeupService started")
     }
 
     /** 🔥 Function to Sign in with Google using Credential Manager API */
@@ -344,7 +336,6 @@ class MainActivity : ComponentActivity() {
                 if (allGranted) {
                     Log.d("MainActivity", "✅ All permissions granted")
                     fetchLocation() // ✅ Fetch location after permission granted
-                    startVoiceWakeupService()
                 } else {
                     Log.e("MainActivity", "❌ Some permissions were denied")
                     Toast.makeText(this, "Permissions are required for full functionality!", Toast.LENGTH_LONG).show()
