@@ -43,6 +43,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.nextlevelprogrammers.surakshakawach.MainActivity
 import com.nextlevelprogrammers.surakshakawach.R
 import com.nextlevelprogrammers.surakshakawach.uidesign.themeInsets.ThemeViewModel
+import kotlinx.coroutines.delay
 
 @RequiresApi(Build.VERSION_CODES.O)
 @Composable
@@ -70,7 +71,7 @@ fun MainScreen(
         close()
     }
     var selectedIndex by rememberSaveable { mutableIntStateOf(0) }
-    var isRunning by remember { mutableStateOf(false) }
+    var isRunning by remember { mutableStateOf(isServiceRunning()) }
 
     Scaffold(
         topBar = {
@@ -149,7 +150,13 @@ fun MainScreen(
         }
     ) { innerPadding ->
         LaunchedEffect(Unit){
-            isRunning=isServiceRunning()
+            while(true){
+                val running= isServiceRunning()
+                if(isRunning!=running){
+                    isRunning=running
+                }
+                delay(2000)
+            }
         }
         Box(modifier = Modifier.padding(innerPadding)) {
             when (selectedIndex) {

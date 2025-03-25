@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:orientation="vertical"
+    android:background="@android:color/transparent"
+    android:gravity="center"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <ViewFlipper
+        android:id="@+id/viewFlipper"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <ImageView
+            android:id="@+id/imageViewDefault"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:contentDescription="Default SOS"
+            android:scaleType="centerInside"
+            android:src="@drawable/soswidget" />
+        <ImageView
+            android:id="@+id/imageViewActive"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:src="@drawable/sos_sent"
+            android:scaleType="centerCrop"
+            android:contentDescription="Active SOS" />
+
+    </ViewFlipper>
+    </LinearLayout>

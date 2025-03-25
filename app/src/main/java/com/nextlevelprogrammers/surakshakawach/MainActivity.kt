@@ -237,6 +237,7 @@ class MainActivity : ComponentActivity() {
                             }
                         }
                     }
+                    sharedPreferences.edit().putString("user_id", auth.currentUser?.uid).apply()
                     // Here we navigate to the Main Screen----
                     navController.navigate(Routes.MAIN_SCREEN){
                         popUpTo(Routes.GET_STARTED){inclusive=true} //This is how we remove the previous graph darling.
@@ -298,6 +299,7 @@ class MainActivity : ComponentActivity() {
 
     private fun signOut(navController: NavHostController){
         auth.signOut()
+        sharedPreferences.edit().putString("user_id", "").apply()
         navController.navigate(Routes.GET_STARTED){
             popUpTo("MainScreen"){inclusive=true}
         }
