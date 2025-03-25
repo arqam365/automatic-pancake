@@ -9,6 +9,7 @@ import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
 import com.nextlevelprogrammers.surakshakawach.R
+import com.nextlevelprogrammers.surakshakawach.broadcastReciever.SOSWidgetReciever
 import com.nextlevelprogrammers.surakshakawach.data.remote.ApiService
 import com.nextlevelprogrammers.surakshakawach.emergency_videos.VideoRecorder
 import com.nextlevelprogrammers.surakshakawach.model.TicketResponse
@@ -174,6 +175,10 @@ class SOSForegroundService : Service() {
                     Log.e("SOSService", "❌ Failed to Close Ticket")
                 }
             }
+            val intent=Intent(this@SOSForegroundService,SOSWidgetReciever::class.java).apply {
+                action= "com.nextlevelprogrammers.surakshakawach.SOS_RESET_ACTION"
+            }
+            this@SOSForegroundService.sendBroadcast(intent)
             stopSelf() // End service
         }
     }

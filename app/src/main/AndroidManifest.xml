@@ -80,22 +80,20 @@
             android:foregroundServiceType="camera|microphone|location"
             android:exported="false"/>
 
-        <service
-            android:name=".service.VoiceWakeupService"
-            android:foregroundServiceType="microphone" />
-
-        <receiver android:name=".receiver.SOSActivationReceiver"
+        <receiver
+            android:name=".uidesign.SOSWidgetProvider"
             android:exported="true">
             <intent-filter>
-                <action android:name="com.nextlevelprogrammers.surakshakawach.WAKE_WORD_DETECTED" />
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
             </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/soswidget" />
         </receiver>
 
-        <receiver android:enabled="true" android:exported="false" android:name=".receiver.BootCompletedReceiver">
-            <intent-filter>
-                <action android:name="android.intent.action.BOOT_COMPLETED"/>
-            </intent-filter>
-        </receiver>
+        <receiver android:name=".broadcastReciever.SOSWidgetReciever"
+            android:exported="true" />
+
 
     </application>
 
