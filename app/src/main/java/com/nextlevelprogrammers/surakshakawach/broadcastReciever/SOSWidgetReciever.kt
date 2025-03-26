@@ -11,42 +11,62 @@ import com.nextlevelprogrammers.surakshakawach.R
 import com.nextlevelprogrammers.surakshakawach.service.SOSForegroundService
 import com.nextlevelprogrammers.surakshakawach.uidesign.SOSWidgetProvider
 
-class SOSWidgetReciever: BroadcastReceiver(){
-    override fun onReceive(context: Context, intent: Intent?)
-    {
-        if (intent?.action == "com.nextlevelprogrammers.surakshakawach.SOS_ACTION")
-        {
-            val prefs = context.getSharedPreferences("AppPrefs", Context.MODE_PRIVATE)
-            val sos_status= prefs.getBoolean("is_service_running", false )
-            val userId = intent.getStringExtra("USER_ID")
-            val serviceIntent = Intent(context, SOSForegroundService::class.java).apply {
-                action = SOSForegroundService.Actions.START.toString()
-                putExtra(SOSForegroundService.USER_ID_KEY, userId)
+class SOSWidgetReciever : BroadcastReceiver() {
+    override fun onReceive(context: Context, intent: Intent?) {
+        val action = intent?.action ?: return
+
+        when (action) {
+            //Action triggered by the sos widget to start SOS
+            "com.nextlevelprogrammers.surakshakawach.SOS_ACTION" ->
+                {
+                val prefs = context.getSharedPreferences("AppPrefs", Context.MODE_PRIVATE)
+                val sosStatus = prefs.getBoolean("is_service_running", false)
+                val userId = intent.getStringExtra("USER_ID")
+
+                if (!sosStatus) {
+                    val serviceIntent = Intent(context, SOSForegroundService::class.java).apply {
+                        this.action = SOSForegroundService.Actions.START.toString()
+                        putExtra(SOSForegroundService.USER_ID_KEY, userId)
+                    }
+                    ContextCompat.startForegroundService(context, serviceIntent)
+
+                    // Update widget to show active SOS image via ViewFlipper
+                    val appWidgetManager = AppWidgetManager.getInstance(context)
+                    val widgetComponent = ComponentName(context, SOSWidgetProvider::class.java)
+                    val widgetIds = appWidgetManager.getAppWidgetIds(widgetComponent)
+                    for (widgetId in widgetIds) {
+                        val views = RemoteViews(context.packageName, R.layout.widget_sos_layout)
+                        views.showNext(R.id.viewFlipper)
+                        appWidgetManager.updateAppWidget(widgetId, views)
+                    }
+                }
             }
-            if(sos_status==false){
-                ContextCompat.startForegroundService(context, serviceIntent)
-                // 2️⃣ Update widget to show active SOS image via ViewFlipper
+
+            //Action triggered when service is stopped on StopService
+            "com.nextlevelprogrammers.surakshakawach.SOS_RESET_ACTION" ->
+                {
                 val appWidgetManager = AppWidgetManager.getInstance(context)
                 val widgetComponent = ComponentName(context, SOSWidgetProvider::class.java)
                 val widgetIds = appWidgetManager.getAppWidgetIds(widgetComponent)
                 for (widgetId in widgetIds) {
                     val views = RemoteViews(context.packageName, R.layout.widget_sos_layout)
-                    // Flip to next image (active image)
-                    views.showNext(R.id.viewFlipper)
+                    views.setDisplayedChild(R.id.viewFlipper, 0)
+                    appWidgetManager.updateAppWidget(widgetId, views)
+                }
+            }
+
+            //Action when the SOS is triggered from the app activity
+            "com.nextlevelprogrammers.surakshakawach.SOS_Service.SOS_Started" ->
+            {
+                val appWidgetManager = AppWidgetManager.getInstance(context)
+                val widgetComponent = ComponentName(context, SOSWidgetProvider::class.java)
+                val widgetIds = appWidgetManager.getAppWidgetIds(widgetComponent)
+                for (widgetId in widgetIds) {
+                    val views = RemoteViews(context.packageName, R.layout.widget_sos_layout)
+                    views.setDisplayedChild(R.id.viewFlipper, 1)
                     appWidgetManager.updateAppWidget(widgetId, views)
                 }
             }
         }
-        if(intent?.action== "com.nextlevelprogrammers.surakshakawach.SOS_RESET_ACTION"){
-            val appWidgetManager = AppWidgetManager.getInstance(context)
-            val widgetComponent = ComponentName(context, SOSWidgetProvider::class.java)
-            val widgetIds = appWidgetManager.getAppWidgetIds(widgetComponent)
-            for (widgetId in widgetIds) {
-                val views = RemoteViews(context.packageName, R.layout.widget_sos_layout)
-                views.setDisplayedChild(R.id.viewFlipper, 0) // Go back to first image (default)
-                appWidgetManager.updateAppWidget(widgetId, views)
-            }
-        }
     }
-
 }

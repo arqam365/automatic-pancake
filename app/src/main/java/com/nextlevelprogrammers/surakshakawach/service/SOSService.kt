@@ -87,6 +87,12 @@ class SOSForegroundService : Service() {
             .build()
         startForeground(1, notification)
 
+        val widgetUpdateIntent = Intent(this@SOSForegroundService, SOSWidgetReciever::class.java).apply {
+            action="com.nextlevelprogrammers.surakshakawach.SOS_Service.SOS_Started"
+        }
+
+        this.sendBroadcast(widgetUpdateIntent)
+
 
         // Initialize
         apiService = ApiService()
