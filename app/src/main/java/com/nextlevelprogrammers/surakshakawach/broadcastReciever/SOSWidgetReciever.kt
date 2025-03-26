@@ -5,6 +5,7 @@ import android.content.BroadcastReceiver
 import android.content.ComponentName
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import android.widget.RemoteViews
 import androidx.core.content.ContextCompat
 import com.nextlevelprogrammers.surakshakawach.R
@@ -19,6 +20,7 @@ class SOSWidgetReciever : BroadcastReceiver() {
             //Action triggered by the sos widget to start SOS
             "com.nextlevelprogrammers.surakshakawach.SOS_ACTION" ->
                 {
+                    Log.d("SOSWidgetReciever", "Intent Recieved-StartSOS")
                 val prefs = context.getSharedPreferences("AppPrefs", Context.MODE_PRIVATE)
                 val sosStatus = prefs.getBoolean("is_service_running", false)
                 val userId = intent.getStringExtra("USER_ID")
@@ -45,6 +47,8 @@ class SOSWidgetReciever : BroadcastReceiver() {
             //Action triggered when service is stopped on StopService
             "com.nextlevelprogrammers.surakshakawach.SOS_RESET_ACTION" ->
                 {
+                    Log.d("SOSWidgetReciever", "Intent Received-StopSOS")
+
                 val appWidgetManager = AppWidgetManager.getInstance(context)
                 val widgetComponent = ComponentName(context, SOSWidgetProvider::class.java)
                 val widgetIds = appWidgetManager.getAppWidgetIds(widgetComponent)
@@ -58,6 +62,7 @@ class SOSWidgetReciever : BroadcastReceiver() {
             //Action when the SOS is triggered from the app activity
             "com.nextlevelprogrammers.surakshakawach.SOS_Service.SOS_Started" ->
             {
+                Log.d("SOSWidgetReciever", "Intent Received-StartSOSFromApp")
                 val appWidgetManager = AppWidgetManager.getInstance(context)
                 val widgetComponent = ComponentName(context, SOSWidgetProvider::class.java)
                 val widgetIds = appWidgetManager.getAppWidgetIds(widgetComponent)
