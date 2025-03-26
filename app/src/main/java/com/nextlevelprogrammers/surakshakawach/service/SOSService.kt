@@ -1,5 +1,6 @@
 package com.nextlevelprogrammers.surakshakawach.service
 
+import android.app.PendingIntent
 import android.app.Service
 import android.content.Context
 import android.content.Intent
@@ -8,6 +9,8 @@ import android.os.IBinder
 import android.util.Log
 import androidx.annotation.RequiresApi
 import androidx.core.app.NotificationCompat
+import androidx.core.app.TaskStackBuilder
+import com.nextlevelprogrammers.surakshakawach.MainActivity
 import com.nextlevelprogrammers.surakshakawach.R
 import com.nextlevelprogrammers.surakshakawach.broadcastReciever.SOSWidgetReciever
 import com.nextlevelprogrammers.surakshakawach.data.remote.ApiService
@@ -70,13 +73,25 @@ class SOSForegroundService : Service() {
 
     @RequiresApi(Build.VERSION_CODES.TIRAMISU)
     private fun startSOSFlow() {
+        val intent= Intent(this, MainActivity::class.java)
+        val notificationPendingIntent: PendingIntent?= TaskStackBuilder.create(this).run{
+            addNextIntentWithParentStack(intent)
+            getPendingIntent(0,PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        }
         // Start Foreground Notification
         val notification = NotificationCompat.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.logo)
             .setContentTitle("SOS is Active")
             .setContentText("Your location is being shared")
+            .setContentIntent(notificationPendingIntent)
             .build()
         startForeground(1, notification)
+
+        val widgetUpdateIntent = Intent(this@SOSForegroundService, SOSWidgetReciever::class.java).apply {
+            action="com.nextlevelprogrammers.surakshakawach.SOS_Service.SOS_Started"
+        }
+
+        this.sendBroadcast(widgetUpdateIntent)
 
 
         // Initialize
@@ -99,6 +114,7 @@ class SOSForegroundService : Service() {
                 val sosResponse = apiService.createSOS(userId, latitude, longitude)
 
                 if (sosResponse.data != null) {
+
                     ticketId = sosResponse.data.ticket_id
                     ticketStatus = sosResponse.data.status
 
@@ -121,8 +137,8 @@ class SOSForegroundService : Service() {
 
     @RequiresApi(Build.VERSION_CODES.O)
     private fun startLocationUpdates() {
-        var currentLatitude:Double=0.0
-        var currentLongitude:Double=0.0
+        var currentLatitude=0.0
+        var currentLongitude=0.0
         locationJob = serviceScope.launch {
             while (ticketStatus == "Active" && ticketId != null) {
                 locationUtils.getLastKnownLocation { latitude, longitude ->
@@ -164,7 +180,6 @@ class SOSForegroundService : Service() {
 
     private fun stopSOS() {
         serviceScope.launch {
-
             locationJob?.cancel()
             videoRecorder.stopRecording()
             ticketId?.let { id ->

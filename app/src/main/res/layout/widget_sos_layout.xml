@@ -22,7 +22,7 @@
             android:id="@+id/imageViewActive"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:src="@drawable/sos_sent"
+            android:src="@drawable/sossentwidget"
             android:scaleType="centerCrop"
             android:contentDescription="Active SOS" />
 
