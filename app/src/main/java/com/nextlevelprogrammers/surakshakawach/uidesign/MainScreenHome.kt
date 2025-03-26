@@ -42,11 +42,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.edit
 import androidx.navigation.NavController
 import coil3.compose.AsyncImage
 import com.google.android.gms.maps.CameraUpdateFactory
-import com.google.android.gms.maps.model.CameraPosition
 import com.google.android.gms.maps.model.LatLng
 import com.google.firebase.auth.FirebaseAuth
 import com.google.maps.android.compose.GoogleMap
@@ -138,6 +136,7 @@ fun SOSDisplay(
     val locationUtils = remember { LocationUtils(navController.context) }
     var currentLocation by remember { mutableStateOf<LatLng?>(null) }
     val cameraPositionState = rememberCameraPositionState()
+    var showMap by remember { mutableStateOf(false) }
 
     // Fetch location
     LaunchedEffect(Unit) {
@@ -150,16 +149,17 @@ fun SOSDisplay(
     // Animate camera when location updates
     LaunchedEffect(currentLocation) {
         currentLocation?.let {
-            cameraPositionState.animate(
+            cameraPositionState.move(
                 update = CameraUpdateFactory.newLatLngZoom(it, 15f)
             )
         }
+        showMap=true
     }
 
     Box(modifier = modifier.fillMaxSize(), contentAlignment = Alignment.BottomCenter){
         Box(modifier.fillMaxWidth().fillMaxHeight(0.885f).align(Alignment.TopCenter), contentAlignment = Alignment.BottomCenter){
-            Box(modifier=modifier.fillMaxSize().shadow(2.dp,RoundedCornerShape(28.dp)).clip(RoundedCornerShape(28.dp)).background(Color.Gray)) {
-                if (currentLocation != null) {
+            Box(modifier=modifier.fillMaxSize().shadow(2.dp,RoundedCornerShape(28.dp)).clip(RoundedCornerShape(28.dp)).background(Color.LightGray)) {
+                if (currentLocation != null && showMap==true) {
                     GoogleMap(
                         modifier = Modifier.fillMaxSize(),
                         cameraPositionState = cameraPositionState
