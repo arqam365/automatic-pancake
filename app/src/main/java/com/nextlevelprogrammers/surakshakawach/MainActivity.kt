@@ -117,8 +117,8 @@ class MainActivity : ComponentActivity() {
             SurakshaKawachTheme(darkTheme = isDarkTheme) {
                 Surface {
                     val navController = rememberNavController()
-                    val startDestination = if (auth.currentUser != null) Routes.MAIN_SCREEN else Routes.GET_STARTED
-
+                    val startDestination = if (auth.currentUser != null && !(isFirstLogin())) Routes.MAIN_SCREEN else Routes.GET_STARTED
+                    Log.d("First Login", "${isFirstLogin()}")
                     NavHost(navController, startDestination = startDestination) {
                         composable(Routes.GET_STARTED) {
                             GetStartedLogin(
@@ -241,6 +241,8 @@ class MainActivity : ComponentActivity() {
                     // Here we navigate to the Main Screen----
                     navController.navigate(Routes.MAIN_SCREEN){
                         popUpTo(Routes.GET_STARTED){inclusive=true} //This is how we remove the previous graph darling.
+                        sharedPreferences.edit().putBoolean("is_First_login", false).apply()
+                        Log.d("First Login", "${isFirstLogin()}")
                     }
                 } else {
                     Log.e(TAG, "❌ Firebase authentication failed: ${task.exception?.localizedMessage}")
@@ -299,7 +301,7 @@ class MainActivity : ComponentActivity() {
 
     private fun signOut(navController: NavHostController){
         auth.signOut()
-        sharedPreferences.edit().putString("user_id", "").apply()
+        sharedPreferences.edit().putString("user_id", null).apply()
         navController.navigate(Routes.GET_STARTED){
             popUpTo("MainScreen"){inclusive=true}
         }
@@ -409,6 +411,11 @@ class MainActivity : ComponentActivity() {
     fun isServiceRunning(): Boolean {
         val prefs = getSharedPreferences("AppPrefs", Context.MODE_PRIVATE)
         return prefs.getBoolean("is_service_running", false)
+    }
+
+    fun isFirstLogin(): Boolean{
+        val prefs= getSharedPreferences("AppPrefs", Context.MODE_PRIVATE)
+        return prefs.getBoolean("is_First_login", true)
     }
 
 

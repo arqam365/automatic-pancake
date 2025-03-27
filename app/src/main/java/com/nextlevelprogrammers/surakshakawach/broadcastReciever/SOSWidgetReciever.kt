@@ -21,28 +21,36 @@ class SOSWidgetReciever : BroadcastReceiver() {
             "com.nextlevelprogrammers.surakshakawach.SOS_ACTION" ->
                 {
                     Log.d("SOSWidgetReciever", "Intent Recieved-StartSOS")
-                val prefs = context.getSharedPreferences("AppPrefs", Context.MODE_PRIVATE)
-                val sosStatus = prefs.getBoolean("is_service_running", false)
-                val userId = intent.getStringExtra("USER_ID")
-
-                if (!sosStatus) {
-                    val serviceIntent = Intent(context, SOSForegroundService::class.java).apply {
-                        this.action = SOSForegroundService.Actions.START.toString()
-                        putExtra(SOSForegroundService.USER_ID_KEY, userId)
+                    val prefs = context.getSharedPreferences("AppPrefs", Context.MODE_PRIVATE)
+                    val sosStatus = prefs.getBoolean("is_service_running", false)
+                    val userId = prefs.getString("user_id", null)
+                    if(userId==null)
+                    {
+                        Log.d("SOSWIDGETRECIEVER", "User ID is not logged in")
                     }
-                    ContextCompat.startForegroundService(context, serviceIntent)
+                    else
+                    {
+                        if (!sosStatus)
+                        {
+                            val serviceIntent =
+                                Intent(context, SOSForegroundService::class.java).apply {
+                                    this.action = SOSForegroundService.Actions.START.toString()
+                                    putExtra(SOSForegroundService.USER_ID_KEY, userId)
+                                }
+                            ContextCompat.startForegroundService(context, serviceIntent)
 
-                    // Update widget to show active SOS image via ViewFlipper
-                    val appWidgetManager = AppWidgetManager.getInstance(context)
-                    val widgetComponent = ComponentName(context, SOSWidgetProvider::class.java)
-                    val widgetIds = appWidgetManager.getAppWidgetIds(widgetComponent)
-                    for (widgetId in widgetIds) {
-                        val views = RemoteViews(context.packageName, R.layout.widget_sos_layout)
-                        views.showNext(R.id.viewFlipper)
-                        appWidgetManager.updateAppWidget(widgetId, views)
+                            // Update widget to show active SOS image via ViewFlipper
+                            val appWidgetManager = AppWidgetManager.getInstance(context)
+                            val widgetComponent = ComponentName(context, SOSWidgetProvider::class.java)
+                            val widgetIds = appWidgetManager.getAppWidgetIds(widgetComponent)
+                            for (widgetId in widgetIds) {
+                                val views = RemoteViews(context.packageName, R.layout.widget_sos_layout)
+                                views.showNext(R.id.viewFlipper)
+                                appWidgetManager.updateAppWidget(widgetId, views)
+                            }
+                        }
                     }
-                }
-            }
+                 }
 
             //Action triggered when service is stopped on StopService
             "com.nextlevelprogrammers.surakshakawach.SOS_RESET_ACTION" ->
