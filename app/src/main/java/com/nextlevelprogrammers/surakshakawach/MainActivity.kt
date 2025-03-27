@@ -301,7 +301,7 @@ class MainActivity : ComponentActivity() {
 
     private fun signOut(navController: NavHostController){
         auth.signOut()
-        sharedPreferences.edit().putString("user_id", "").apply()
+        sharedPreferences.edit().putString("user_id", null).apply()
         navController.navigate(Routes.GET_STARTED){
             popUpTo("MainScreen"){inclusive=true}
         }
