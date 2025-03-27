@@ -38,7 +38,6 @@ class SOSWidgetProvider : AppWidgetProvider() {
                 Log.d("SOSWidgetProvider", "Sending intent to Broadcast receiver")
                 views.setOnClickPendingIntent(R.id.viewFlipper, pendingIntent)
             }
-
             appWidgetManager.updateAppWidget(appWidgetId, views)
         }
     }
