@@ -9,7 +9,7 @@ import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
-import androidx.compose.animation.with
+import androidx.compose.animation.togetherWith
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -149,7 +149,7 @@ fun WelcomeBundle(modifier: Modifier, currentIndex:Int, indicatorPosition: Float
             text = "Welcome",
             fontSize = 20.sp,
             textAlign = TextAlign.Center,
-            color = MaterialTheme.colorScheme.onBackground
+            color = MaterialTheme.colorScheme.onPrimary
         )
 
         Spacer(modifier=Modifier.height(8.dp))
@@ -183,7 +183,7 @@ fun LoopingInfoText(modifier: Modifier, currentIndex: Int){
                 slideIntoContainer(
                     animationSpec = tween(600, easing = LinearEasing),
                     towards = AnimatedContentTransitionScope.SlideDirection.Left
-                ) with slideOutOfContainer(
+                ) togetherWith slideOutOfContainer(
                     animationSpec = tween(600, easing = LinearEasing),
                     towards = AnimatedContentTransitionScope.SlideDirection.Left
                 )
@@ -195,7 +195,7 @@ fun LoopingInfoText(modifier: Modifier, currentIndex: Int){
                     fontWeight = FontWeight.Bold,
                     textAlign = TextAlign.Center,
                     lineHeight = 38.sp,
-                    color = MaterialTheme.colorScheme.onBackground
+                    color = MaterialTheme.colorScheme.onPrimary
                 )
 
         }

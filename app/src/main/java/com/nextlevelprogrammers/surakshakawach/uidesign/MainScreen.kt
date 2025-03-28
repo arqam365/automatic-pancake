@@ -43,6 +43,7 @@ import com.google.firebase.auth.FirebaseAuth
 import com.nextlevelprogrammers.surakshakawach.MainActivity
 import com.nextlevelprogrammers.surakshakawach.R
 import com.nextlevelprogrammers.surakshakawach.uidesign.themeInsets.ThemeViewModel
+import com.nextlevelprogrammers.surakshakawach.viewmodel.AuthViewModel
 import kotlinx.coroutines.delay
 
 @RequiresApi(Build.VERSION_CODES.O)
@@ -61,6 +62,7 @@ fun MainScreen(
     startSOSFService: () -> Unit,
     stopSOSService: () -> Unit,
     isServiceRunning: () -> Boolean,
+    authViewModel: AuthViewModel,
 ){
     val isDarkTheme by themeViewModel.isDarkTheme.collectAsState()
     val BottomShadowShape = GenericShape { size, _ ->
@@ -72,6 +74,7 @@ fun MainScreen(
     }
     var selectedIndex by rememberSaveable { mutableIntStateOf(0) }
     var isRunning by remember { mutableStateOf(isServiceRunning()) }
+    val isAuthenticated by authViewModel.isAuthenticated.collectAsState()
 
     Scaffold(
         topBar = {
@@ -132,8 +135,8 @@ fun MainScreen(
             if(isRunning){
                 FloatingActionButton(
                     onClick = {
-                        stopSOSService()
-                        isRunning=false},
+                        context.promptForLockScreen(authViewModel)
+                        },
                     containerColor = Color.Red,
                     elevation = FloatingActionButtonDefaults.elevation(4.dp),
                     shape = CircleShape,
@@ -149,6 +152,13 @@ fun MainScreen(
             }
         }
     ) { innerPadding ->
+        LaunchedEffect(isAuthenticated){
+            if(isAuthenticated){
+                stopSOSService()
+                isRunning=false
+                authViewModel.resetAuthentication()
+            }
+        }
         LaunchedEffect(Unit){
             while(true){
                 val running= isServiceRunning()
