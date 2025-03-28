@@ -134,6 +134,7 @@ class MainActivity : ComponentActivity() {
                                 onSignOutClick={signOut(navController)},
                                 auth=auth,context = this@MainActivity, userId = userId,SOS_Status=SOS_Status, hideSOSFloatingButton={SOS_Status=false}, showSOSFloatingButton={SOS_Status=true},
                                 themeViewModel=themeViewModel,
+                                authViewModel=authViewModel,
                                 startSOSFService= { startSOSService(userId = userId, context =  this@MainActivity) },
                                 stopSOSService= { stopSOSService(this@MainActivity) },
                                 isServiceRunning={isServiceRunning()}
@@ -372,7 +373,7 @@ class MainActivity : ComponentActivity() {
         val keyguardManager = getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
         if (keyguardManager.isDeviceSecure) {
             val intent = keyguardManager.createConfirmDeviceCredentialIntent(
-                "Unlock Required",
+                "Authentication Required",
                 "Please enter your lock screen password"
             )
             if (intent != null) {
