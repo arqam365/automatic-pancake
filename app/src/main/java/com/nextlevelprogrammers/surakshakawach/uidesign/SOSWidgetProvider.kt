@@ -30,7 +30,7 @@ class SOSWidgetProvider : AppWidgetProvider() {
                         PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
                     else PendingIntent.FLAG_UPDATE_CURRENT
                 )
-                views.setOnClickPendingIntent(R.id.viewFlipper, pendingIntent)
+                views.setOnClickPendingIntent(R.id.slider_container, pendingIntent)
             appWidgetManager.updateAppWidget(appWidgetId, views)
         }
     }

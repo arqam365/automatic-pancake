@@ -45,7 +45,8 @@ class SOSWidgetReciever : BroadcastReceiver() {
                             val widgetIds = appWidgetManager.getAppWidgetIds(widgetComponent)
                             for (widgetId in widgetIds) {
                                 val views = RemoteViews(context.packageName, R.layout.widget_sos_layout)
-                                views.showNext(R.id.viewFlipper)
+
+                                views.setDisplayedChild(R.id.viewFlipper, 1) // Show green state
                                 appWidgetManager.updateAppWidget(widgetId, views)
                             }
                         }
