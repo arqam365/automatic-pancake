@@ -3,7 +3,7 @@
     xmlns:android="http://schemas.android.com/apk/res/android"
     android:id="@+id/slider_container"
     android:layout_width="130dp"
-    android:layout_height="80dp"
+    android:layout_height="70dp"
     android:clipToOutline="true"
     android:background="@drawable/widget_background">
 
@@ -16,20 +16,22 @@
         <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:paddingStart="4dp"
-            android:background="@color/white">
+            android:paddingStart="8dp"
+            android:background="@color/grey">
 
             <ImageView
                 android:id="@+id/slider_knob"
-                android:layout_width="64dp"
-                android:layout_height="64dp"
+                android:layout_width="55dp"
+                android:layout_height="55dp"
                 android:padding="4dp"
                 android:src="@drawable/logo"
                 android:scaleType="centerCrop"
                 android:background="@drawable/round_button"
                 android:layout_alignParentLeft="true"
                 android:layout_centerVertical="true"
-                android:contentDescription="Slide Button" />
+                android:contentDescription="Slide Button"
+
+                />
         </RelativeLayout>
 
         <!-- SOS Active State (Knob on Right, Green Background) -->
@@ -41,8 +43,8 @@
 
             <ImageView
                 android:id="@+id/slider_knob_active"
-                android:layout_width="64dp"
-                android:layout_height="64dp"
+                android:layout_width="55dp"
+                android:layout_height="55dp"
                 android:padding="4dp"
                 android:src="@drawable/logo"
                 android:scaleType="centerCrop"

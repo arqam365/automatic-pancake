@@ -43,6 +43,14 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+        <activity
+            android:name=".activities.LockscreenPromptActivity"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:taskAffinity=""
+            android:excludeFromRecents="true"
+            android:theme="@style/Theme.Transparent" />
+
         <receiver
             android:name=".deviceadmin.MyDeviceAdminReceiver"
             android:exported="true"

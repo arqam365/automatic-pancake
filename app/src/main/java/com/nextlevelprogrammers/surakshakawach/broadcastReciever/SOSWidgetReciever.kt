@@ -9,6 +9,7 @@ import android.util.Log
 import android.widget.RemoteViews
 import androidx.core.content.ContextCompat
 import com.nextlevelprogrammers.surakshakawach.R
+import com.nextlevelprogrammers.surakshakawach.activities.LockscreenPromptActivity
 import com.nextlevelprogrammers.surakshakawach.service.SOSForegroundService
 import com.nextlevelprogrammers.surakshakawach.uidesign.SOSWidgetProvider
 
@@ -45,10 +46,16 @@ class SOSWidgetReciever : BroadcastReceiver() {
                             val widgetIds = appWidgetManager.getAppWidgetIds(widgetComponent)
                             for (widgetId in widgetIds) {
                                 val views = RemoteViews(context.packageName, R.layout.widget_sos_layout)
-
                                 views.setDisplayedChild(R.id.viewFlipper, 1) // Show green state
                                 appWidgetManager.updateAppWidget(widgetId, views)
                             }
+                        }
+                        if(sosStatus){
+                            val lockIntent =
+                                Intent(context, LockscreenPromptActivity::class.java).apply {
+                                    flags = Intent.FLAG_ACTIVITY_NEW_TASK
+                                }
+                            context.startActivity(lockIntent)
                         }
                     }
                  }

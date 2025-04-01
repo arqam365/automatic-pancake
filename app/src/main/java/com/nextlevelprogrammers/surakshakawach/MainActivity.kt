@@ -369,7 +369,8 @@ class MainActivity : ComponentActivity() {
     companion object {
         private const val TAG = "GoogleSignIn"
     }
-    fun promptForLockScreen(authViewModel: AuthViewModel) {
+    fun promptForLockScreen(authViewModel: AuthViewModel)
+    {
         val keyguardManager = getSystemService(Context.KEYGUARD_SERVICE) as KeyguardManager
         if (keyguardManager.isDeviceSecure) {
             val intent = keyguardManager.createConfirmDeviceCredentialIntent(

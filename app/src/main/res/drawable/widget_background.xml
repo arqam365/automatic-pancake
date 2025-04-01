@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <shape xmlns:android="http://schemas.android.com/apk/res/android"
     android:shape="rectangle">
-    <solid android:color="@color/white"/> <!-- or @color/green when active -->
-    <corners android:radius="128dp"/> <!-- Match knob radius or desired curve -->
+    <solid android:color="@color/grey"/> <!-- or @color/green when active -->
+    <corners android:radius="110dp"/> <!-- Match knob radius or desired curve -->
 </shape>
