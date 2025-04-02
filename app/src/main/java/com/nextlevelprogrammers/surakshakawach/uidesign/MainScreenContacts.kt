@@ -305,7 +305,7 @@ fun EditContactDialog(
     onAction: (ContactScreenAction) -> Unit
 ) {
     var newName by remember { mutableStateOf(contact.name) }
-    var newNumber by remember { mutableStateOf(contact.phone_number) }
+    var newNumber by remember { mutableStateOf(contact.phone_number.drop(2)) }
     var newEmail by remember{ mutableStateOf(contact.email)}
     val context= LocalContext.current
     AlertDialog(
