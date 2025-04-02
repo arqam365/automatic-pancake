@@ -13,25 +13,25 @@ import com.nextlevelprogrammers.surakshakawach.broadcastReciever.SOSWidgetReciev
 class SOSWidgetProvider : AppWidgetProvider() {
 
     override fun onUpdate(context: Context, appWidgetManager: AppWidgetManager, appWidgetIds: IntArray) {
-        val prefs = context.getSharedPreferences("AppPrefs", Context.MODE_PRIVATE)
-        val userId = prefs.getString("user_id", null)
+
 
         for (appWidgetId in appWidgetIds) {
             val views = RemoteViews(context.packageName, R.layout.widget_sos_layout)
                 val intent = Intent(context, SOSWidgetReciever::class.java).apply {
                     action = "com.nextlevelprogrammers.surakshakawach.SOS_ACTION"
                 }
-
                 val pendingIntent = PendingIntent.getBroadcast(
                     context,
-                    0,
+                    appWidgetId,
                     intent,
                     if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S)
                         PendingIntent.FLAG_IMMUTABLE or PendingIntent.FLAG_UPDATE_CURRENT
                     else PendingIntent.FLAG_UPDATE_CURRENT
                 )
                 views.setOnClickPendingIntent(R.id.slider_container, pendingIntent)
-            appWidgetManager.updateAppWidget(appWidgetId, views)
+                views.setOnClickPendingIntent(R.id.slider_knob, pendingIntent)
+                views.setOnClickPendingIntent(R.id.slider_knob_active, pendingIntent)
+                appWidgetManager.updateAppWidget(appWidgetId, views)
         }
     }
 }
