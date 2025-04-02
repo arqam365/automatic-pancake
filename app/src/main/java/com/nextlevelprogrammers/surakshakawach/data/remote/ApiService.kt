@@ -136,7 +136,7 @@ class ApiService() {
     suspend fun createSOS(userId: String, latitude: Double, longitude: Double): SOSResponse {
         // 🔥 Fix starts here
         val createdAtFormatted = ZonedDateTime.now()
-            .minusSeconds(1) // Optional: 1-second buffer
+            .minusSeconds(5) // Optional: 1-second buffer
             .withNano(0) // Remove nanoseconds
             .format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
 
@@ -164,7 +164,7 @@ class ApiService() {
     suspend fun updateLocation(userId: String, ticketId: String, latitude: Double, longitude: Double): HttpResponse {
 
         val createdAtFormatted = ZonedDateTime.now()
-            .minusSeconds(1) // Optional: 1-second buffer
+            .minusSeconds(5) // Optional: 1-second buffer
             .withNano(0) // Remove nanoseconds
             .format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
 
@@ -186,7 +186,7 @@ class ApiService() {
     suspend fun uploadVideo(userId: String, ticketId: String, videoUrl: String, bucketUrl: String): VideoResponse? {
         return try {
             val createdAtFormatted = ZonedDateTime.now()
-                .minusSeconds(1) // Optional: 1-second buffer
+                .minusSeconds(5) // Optional: 1-second buffer
                 .withNano(0) // Remove nanoseconds
                 .format(DateTimeFormatter.ISO_OFFSET_DATE_TIME)
 
