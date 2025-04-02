@@ -99,7 +99,7 @@ class VideoRecorder(private val context: Context) {
         CoroutineScope(Dispatchers.IO).launch {
             while (isRecordingActive) {
                 val videoFile = startVideoRecording() ?: continue
-                delay(60000) // 🎥 Record for 60 seconds
+                delay(30000) // 🎥 Record for 30 seconds
 
                 stopVideoRecording(videoFile) { uploadedUrl, bucketUrl ->
                     if (uploadedUrl.isEmpty()) {

@@ -104,7 +104,9 @@ class MainActivity : ComponentActivity() {
 
         locationUtils = LocationUtils(this)
 
-        requestPermissions()
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            requestPermissions()
+        }
 
         setContent {
             val themeViewModel: ThemeViewModel = viewModel(factory = object : ViewModelProvider.Factory {

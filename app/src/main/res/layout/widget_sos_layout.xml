@@ -4,8 +4,7 @@
     android:id="@+id/slider_container"
     android:layout_width="130dp"
     android:layout_height="70dp"
-    android:clipToOutline="true"
-    android:background="@drawable/widget_background">
+    >
 
     <ViewFlipper
         android:id="@+id/viewFlipper"
@@ -17,7 +16,8 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:paddingStart="8dp"
-            android:background="@color/grey">
+            android:background="@drawable/widget_background"
+            >
 
             <ImageView
                 android:id="@+id/slider_knob"
@@ -41,7 +41,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:paddingEnd="8dp"
-            android:background="@color/teal_200"> <!-- Your green color -->
+            android:background="@drawable/widget_background_green"> <!-- Your green color -->
 
             <ImageView
                 android:id="@+id/slider_knob_active"
