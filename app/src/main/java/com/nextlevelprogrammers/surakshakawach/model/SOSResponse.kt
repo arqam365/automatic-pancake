@@ -13,7 +13,7 @@ data class TicketData(
     val video: List<String>,
     val ticket_id: String,
     val user_id: String,
-    val station_id: String?,
+    val station_id: String?, //Error Resolved
     val status: String,
     val location_data: List<LocationData>,
     val images: List<String>,
