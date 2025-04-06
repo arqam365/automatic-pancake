@@ -42,6 +42,7 @@ class ApiService() {
                 prettyPrint = true
                 isLenient = true
                 ignoreUnknownKeys = true
+                coerceInputValues = true
             })
         }
     }
